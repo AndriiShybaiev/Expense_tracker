@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: expense-tracker-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: expense_db
+      POSTGRES_USER: expense_user
+      POSTGRES_PASSWORD: expense_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./expense-tracker-backend
+    container_name: expense-tracker-backend
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/expense_db
+      SPRING_DATASOURCE_USERNAME: expense_user
+      SPRING_DATASOURCE_PASSWORD: expense_pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./expense-tracker-frontend
+    container_name: expense-tracker-frontend
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:

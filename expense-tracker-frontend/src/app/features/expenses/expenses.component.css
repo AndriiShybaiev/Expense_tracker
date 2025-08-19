@@ -1,0 +1,17 @@
+.expenses {
+  padding: 1rem;
+  font-family: Arial, sans-serif;
+}
+
+.expenses h2 {
+  margin-bottom: 0.5rem;
+}
+
+.expenses ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.expenses li {
+  padding: 0.25rem 0;
+}

@@ -29,17 +29,19 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          cache-dependency-path: expense-tracker-frontend/package-lock.json
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
         working-directory: expense-tracker-frontend
 
       - name: Build frontend
         run: npm run build --if-present
         working-directory: expense-tracker-frontend
 
-      - name: Run tests
+      - name: Run backend tests
         run: mvn test --file expense-tracker-backend/pom.xml
+
 
   deploy:
     runs-on: ubuntu-latest

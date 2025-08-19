@@ -1,0 +1,15 @@
+<div class="expenses">
+  <h2>Expenses Works!</h2>
+
+  <!-- Temporary placeholder content -->
+  <p>This is a placeholder template for the Expenses component.</p>
+
+  <ul>
+    @for (expense of expenses; track expense.name) {
+      <li>{{ expense.name }} - {{ expense.amount}}</li>
+    } @empty {
+      <li>No expenses</li>
+    }
+  </ul>
+
+</div>

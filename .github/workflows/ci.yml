@@ -22,7 +22,7 @@ jobs:
           cache: maven
 
       - name: Build backend
-        run: mvn -B package --file expense-tracker-backend/pom.xml
+        run: mvn -B clean verify --file expense-tracker-backend/pom.xml
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

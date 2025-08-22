@@ -37,11 +37,11 @@ public class User {
     private String username;
 
     @NotBlank @Email @Size(max = 255)
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String email;
 
     @NotBlank @Size(min = 60, max = 255)
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit moduleName="expense-tracker-backend" name="expense-tracker-backend" framework="JPA" ormUnit="expense-tracker-backend:expense-tracker-backend" defaultDataSourceId="17c0757a-bf9b-4a70-add9-a03092bd67da" />
+    </persistence-units>
+  </component>
+</project>

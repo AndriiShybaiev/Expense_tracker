@@ -62,3 +62,5 @@ erDiagram
     USER ||--o{ EXPENSE : creates
     BUDGET ||--o{ EXPENSE : includes
 ```
+
+

@@ -4,7 +4,6 @@ package com.shybaiev.expense_tracker_backend.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -38,7 +37,7 @@ public class Expense {
 
     @JsonBackReference
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "budget_id")
+    @JoinColumn(name = "budget_id", nullable = true)
     private Budget budget;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

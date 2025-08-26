@@ -65,8 +65,13 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @JsonProperty("expenses") //
+    @JsonProperty("expenses")
     @Valid
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Expense> expenses = new ArrayList<>();
+
+    @JsonProperty("budgets")
+    @Valid
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Budget> budgets = new ArrayList<>();
 }

@@ -32,6 +32,12 @@ public class Expense {
     @Column(length = 100)
     private String place;
 
+    @Column(length = 100)
+    private String category;
+
+    @Column(length = 100)
+    private String source;
+
     @Column()
     private OffsetDateTime timestamp;
 

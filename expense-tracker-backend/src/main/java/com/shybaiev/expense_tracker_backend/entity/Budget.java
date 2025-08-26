@@ -29,10 +29,10 @@ public class Budget {
     private BigDecimal amount;
 
     @NotBlank
-    String time_period;
+    String timePeriod;
 
     @NotNull
-    LocalDate start_date;
+    LocalDate startDate;
 
     @OneToMany(
             mappedBy = "budget",
@@ -41,4 +41,10 @@ public class Budget {
     @JsonManagedReference
     @Valid
     private List<Expense> expenses = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+
 }

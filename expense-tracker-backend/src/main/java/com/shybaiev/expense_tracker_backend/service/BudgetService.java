@@ -4,10 +4,14 @@ import com.shybaiev.expense_tracker_backend.entity.Budget;
 import com.shybaiev.expense_tracker_backend.entity.Expense;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import com.shybaiev.expense_tracker_backend.repository.BudgetRepository;
+import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 @Service
@@ -15,6 +19,7 @@ import java.util.Optional;
 public class BudgetService {
 
     private final BudgetRepository budgetRepository;
+    private final ExpenseRepository expenseRepository;
 
     public Budget createBudget(Budget budget) {
         return budgetRepository.save(budget);
@@ -72,4 +77,18 @@ public class BudgetService {
         }
         budgetRepository.deleteById(id);
     }
+
+    public BigDecimal getTotalExpensesForBudget(Budget budget) {
+        return expenseRepository.getTotalExpensesByBudget(budget);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isUserOverBudget(User user, Budget budget) {
+        if (budget.getUser() == null || !budget.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Budget does not belong to user");
+        }
+        BigDecimal total = expenseRepository.getTotalExpensesByBudgetAndUser(budget, user);
+        return total.compareTo(budget.getAmount()) > 0;
+    }
+
 }

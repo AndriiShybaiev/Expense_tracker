@@ -39,6 +39,7 @@ class ExpenseRepositoryTest {
         budget.setTimePeriod("MONTHLY");
         budget.setStartDate(java.time.LocalDate.now());
         budget.setAmount(BigDecimal.valueOf(1000));
+        budget.setName("My Monthly Budget");
         budget = budgetRepository.save(budget);
 
         Expense expense = new Expense();

@@ -45,14 +45,14 @@ public class UserService {
         }
     }
 
-
-
-
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new EntityNotFoundException("User with id " + id + " not found");
+        }
         userRepository.deleteById(id);
     }
 

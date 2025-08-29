@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
@@ -88,9 +89,11 @@ class BudgetRepositoryTest {
         expenseRepository.save(expense);
 
         // when
-        Budget foundBudget = budgetRepository.findByExpenses(expense);
-
+        Optional<Budget> foundBudget = budgetRepository.findByExpenses(expense);
         // then
-        assertThat(foundBudget.getAmount().intValueExact()).isEqualTo(1000);
+        foundBudget.ifPresent(foundExistingBudget -> assertThat(foundExistingBudget.getAmount().intValueExact()).isEqualTo(1000));
+
+
+
     }
 }

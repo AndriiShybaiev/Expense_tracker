@@ -7,8 +7,6 @@ import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,8 +24,8 @@ public class ExpenseService {
         return expenseRepository.findById(id);
     }
 
-    public Expense updateExpense(Long id, Expense updatedExpense){
-        Optional<Expense> foundExpense = expenseRepository.findById(id);
+    public Expense updateExpense(Long existingExpenseId, Expense updatedExpense){
+        Optional<Expense> foundExpense = expenseRepository.findById(existingExpenseId);
         if (foundExpense.isPresent()){
             Expense existingExpense = foundExpense.get();
             if (updatedExpense.getAmount() != null) {
@@ -51,7 +49,7 @@ public class ExpenseService {
             return expenseRepository.save(existingExpense);
         }
         else {
-            throw new EntityNotFoundException("Expense with id " + id + " not found");
+            throw new EntityNotFoundException("Expense with id " + existingExpenseId + " not found");
         }
     }
 

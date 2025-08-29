@@ -43,6 +43,8 @@ erDiagram
     BUDGET {
         int id PK
         float amount
+        string name
+        string description
         string time_period
         date start_date
         int user_id FK

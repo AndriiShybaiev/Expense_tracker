@@ -29,6 +29,11 @@ public class Budget {
     private BigDecimal amount;
 
     @NotBlank
+    String name;
+
+    String description;
+
+    @NotBlank
     String timePeriod;
 
     @NotNull

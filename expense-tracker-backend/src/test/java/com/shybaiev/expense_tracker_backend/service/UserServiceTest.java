@@ -40,24 +40,28 @@ class UserServiceTest {
     }
 
     @Test
-    void createUser() {
+    void testCreateUser() {
         //given
         //setUp
         //when
         when(userRepository.save(existingUser)).thenReturn(existingUser);
         //then
         assertEquals(existingUser, userService.createUser(existingUser));
+        verify(userRepository).save(existingUser);
+
     }
 
     @Test
-    void getUserById() {
+    void testGetUserById() {
         // given
         // setUp
         // when
         when(userRepository.findById(existingUser.getId())).thenReturn(Optional.of(existingUser));
-        // then
-        assertTrue(userService.getUserById(existingUser.getId()).isPresent());
-        assertEquals(existingUser, userService.getUserById(existingUser.getId()).get());
+        Optional<User> result = userService.getUserById(existingUser.getId());
+        //then
+        assertTrue(result.isPresent());
+        assertEquals(existingUser, result.get());
+
     }
 
     @Test
@@ -112,7 +116,6 @@ class UserServiceTest {
         // then
         verify(userRepository).existsById(existingUser.getId());
         verify(userRepository).deleteById(existingUser.getId());
-        assertDoesNotThrow(() -> userService.deleteUser(existingUser.getId()));
     }
 
     @Test

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -50,8 +49,7 @@ class ExpenseRepositoryTest {
         expense.setSource("Cash");
         expense.setDescription("Groceries");
         expense.setPlace("Supermarket");
-        expense.setTimestamp(OffsetDateTime.now()
-        );
+        expense.setTimestamp(OffsetDateTime.now());
         expenseRepository.save(expense);
 
         // when
@@ -59,7 +57,7 @@ class ExpenseRepositoryTest {
 
         // then
         assertThat(expenses).hasSize(1);
-        assertThat(expenses.get(0).getCategory()).isEqualTo("Food");
+        assertThat(expenses.getFirst().getCategory()).isEqualTo("Food");
     }
 }
 

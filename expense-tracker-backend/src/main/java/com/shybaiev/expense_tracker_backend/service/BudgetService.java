@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 @Service
@@ -20,6 +21,7 @@ public class BudgetService {
 
     private final BudgetRepository budgetRepository;
     private final ExpenseRepository expenseRepository;
+    private final ExpenseService expenseService;
 
     public Budget createBudget(Budget budget) {
         return budgetRepository.save(budget);
@@ -83,12 +85,15 @@ public class BudgetService {
     }
 
     @Transactional(readOnly = true)
-    public boolean isUserOverBudget(User user, Budget budget) {
-        if (budget.getUser() == null || !budget.getUser().getId().equals(user.getId())) {
-            throw new AccessDeniedException("Budget does not belong to user");
+    public boolean isUserOverBudgetInMonth(User user, YearMonth yearMonth) {
+        if (user.getBudgets().isEmpty()) {
+            return false;
         }
-        BigDecimal total = expenseRepository.getTotalExpensesByBudgetAndUser(budget, user);
-        return total.compareTo(budget.getAmount()) > 0;
+        Budget budget = user.getBudgets().getFirst(); // в MVP максимум один
+        BigDecimal totalExpenses = expenseService.getTotalExpensesForUserInMonth(user, yearMonth);
+
+        return totalExpenses.compareTo(budget.getAmount()) > 0;
     }
+
 
 }

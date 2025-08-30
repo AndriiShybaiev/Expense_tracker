@@ -7,7 +7,11 @@ import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,6 +83,24 @@ public class ExpenseService {
         }
         expenseRepository.deleteById(id);
     }
+
+    public BigDecimal getTotalExpensesForUserInMonth(User user, YearMonth yearMonth) {
+        OffsetDateTime start = yearMonth.atDay(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime end = yearMonth.atEndOfMonth().atTime(23, 59, 59).atOffset(ZoneOffset.UTC);
+
+        List<Expense> expenses = expenseRepository.findAllByTimestampBetweenAndUser(start, end, user);
+
+        BigDecimal total = BigDecimal.ZERO;
+        for (Expense expense : expenses) {
+            if (expense.getAmount() != null) {
+                total = total.add(expense.getAmount());
+            }
+        }
+
+        return total;
+    }
+
+
 
 
 }

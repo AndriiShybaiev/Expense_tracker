@@ -1,13 +1,15 @@
 package com.shybaiev.expense_tracker_backend.controller;
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
+import com.shybaiev.expense_tracker_backend.dto.UserUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import com.shybaiev.expense_tracker_backend.mapper.UserMapper;
 import com.shybaiev.expense_tracker_backend.service.UserService;
-import jakarta.validation.Valid;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +22,15 @@ public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
 
+    @PostMapping
+    public ResponseEntity<UserDto> createUser(@RequestBody UserUpdateDto userUpdateDto) {
+        User user = userMapper.updateToEntity(userUpdateDto);
+        user.setEnabled(true);
+        User saved = userService.createUser(user);
+        URI location = URI.create("/users/" + saved.getId());
+        return ResponseEntity.created(location).body(userMapper.toDto(saved));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         Optional<User> maybeUser = userService.getUserById(id);
@@ -29,6 +40,18 @@ public class UserController {
         UserDto body = userMapper.toDto(maybeUser.get());
         return ResponseEntity.ok(body);
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserUpdateDto userUpdateDto) {
+        User user = userMapper.updateToEntity(userUpdateDto);
+        try {
+            User updated = userService.updateUser(id, user);
+            return ResponseEntity.ok(userMapper.toDto(updated));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 
     @GetMapping
     public ResponseEntity<List<UserDto>> getAllUsers() {

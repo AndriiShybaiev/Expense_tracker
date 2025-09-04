@@ -4,7 +4,7 @@ import com.shybaiev.expense_tracker_backend.entity.Role;
 import lombok.Data;
 
 @Data
-public class UserUpdateDto {
+public class UserCreateUpdateDto {
     private String username;
     private String email;
     private String password;

@@ -1,21 +1,21 @@
 package com.shybaiev.expense_tracker_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.shybaiev.expense_tracker_backend.configuration.SecurityTestConfig;
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
-import com.shybaiev.expense_tracker_backend.dto.UserUpdateDto;
+import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import com.shybaiev.expense_tracker_backend.entity.Role;
+import com.shybaiev.expense_tracker_backend.mapper.ExpenseMapper;
 import com.shybaiev.expense_tracker_backend.mapper.UserMapper;
+import com.shybaiev.expense_tracker_backend.service.ExpenseService;
 import com.shybaiev.expense_tracker_backend.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.http.MediaType;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -25,7 +25,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(UserController.class)
-@Import(SecurityTestConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
+
 class UserControllerTest {
 
     @Autowired
@@ -38,12 +39,18 @@ class UserControllerTest {
     private UserService userService;
 
     @MockitoBean
+    private ExpenseService expenseService;
+
+    @MockitoBean
     private UserMapper userMapper;
+
+    @MockitoBean
+    private ExpenseMapper expenseMapper;
 
     @Test
     void testCreateUser() throws Exception {
 
-        UserUpdateDto createDto = new UserUpdateDto();
+        UserCreateUpdateDto createDto = new UserCreateUpdateDto();
         createDto.setUsername("testUser");
         createDto.setEmail("test@email.com");
         createDto.setPassword("pass123");
@@ -62,7 +69,7 @@ class UserControllerTest {
         dto.setRole(Role.USER);
         dto.setEnabled(true);
 
-        when(userMapper.updateToEntity(any(UserUpdateDto.class))).thenReturn(entity);
+        when(userMapper.updateToEntity(any(UserCreateUpdateDto.class))).thenReturn(entity);
         when(userService.createUser(any(User.class))).thenReturn(entity);
         when(userMapper.toDto(entity)).thenReturn(dto);
 

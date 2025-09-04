@@ -1,8 +1,12 @@
 package com.shybaiev.expense_tracker_backend.controller;
+import com.shybaiev.expense_tracker_backend.dto.ExpenseDto;
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
-import com.shybaiev.expense_tracker_backend.dto.UserUpdateDto;
+import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
+import com.shybaiev.expense_tracker_backend.entity.Expense;
 import com.shybaiev.expense_tracker_backend.entity.User;
+import com.shybaiev.expense_tracker_backend.mapper.ExpenseMapper;
 import com.shybaiev.expense_tracker_backend.mapper.UserMapper;
+import com.shybaiev.expense_tracker_backend.service.ExpenseService;
 import com.shybaiev.expense_tracker_backend.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +25,12 @@ public class UserController {
 
     private final UserService userService;
     private final UserMapper userMapper;
+    private final ExpenseService expenseService;
+    private final ExpenseMapper expenseMapper;
 
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody UserUpdateDto userUpdateDto) {
-        User user = userMapper.updateToEntity(userUpdateDto);
+    public ResponseEntity<UserDto> createUser(@RequestBody UserCreateUpdateDto userCreateUpdateDto) {
+        User user = userMapper.updateToEntity(userCreateUpdateDto);
         user.setEnabled(true);
         User saved = userService.createUser(user);
         URI location = URI.create("/users/" + saved.getId());
@@ -42,15 +48,15 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.noContent().build(); // 204 No Content
+        return ResponseEntity.noContent().build(); // code 204 No Content
     }
 
 
     @PatchMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserUpdateDto userUpdateDto) {
-        User user = userMapper.updateToEntity(userUpdateDto);
+    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserCreateUpdateDto userCreateUpdateDto) {
+        User user = userMapper.updateToEntity(userCreateUpdateDto);
         try {
             User updated = userService.updateUser(id, user);
             return ResponseEntity.ok(userMapper.toDto(updated));
@@ -68,5 +74,15 @@ public class UserController {
             result.add(userMapper.toDto(u));
         }
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{id}/expenses")
+    public ResponseEntity<List<ExpenseDto>> getAllExpensesByUser(@PathVariable Long id) {
+        List<Expense> expenses = expenseService.getAllExpensesByUserId(id);
+        List<ExpenseDto> expenseDtos = new ArrayList<>();
+        for (Expense expense : expenses) {
+            expenseDtos.add(expenseMapper.toDto(expense));
+        }
+        return ResponseEntity.ok(expenseDtos);
     }
 }

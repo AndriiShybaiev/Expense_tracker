@@ -1,8 +1,7 @@
 package com.shybaiev.expense_tracker_backend.mapper;
 
-//import com.shybaiev.expense_tracker_backend.dto.UserCreateDto;
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
-import com.shybaiev.expense_tracker_backend.dto.UserUpdateDto;
+import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +18,7 @@ public class UserMapper {
         return dto;
     }
 
-    public User updateToEntity(UserUpdateDto dto) {
+    public User updateToEntity(UserCreateUpdateDto dto) {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());

@@ -6,8 +6,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Data
-public class ExpenseDto {
-    private Long id;
+public class ExpenseCreateUpdateDto {
     private BigDecimal amount;
     private String description;
     private String place;

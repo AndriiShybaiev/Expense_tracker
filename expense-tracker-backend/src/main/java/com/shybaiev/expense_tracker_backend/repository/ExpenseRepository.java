@@ -32,6 +32,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
        where e.budget = :budget and e.user = :user
        """)
     BigDecimal getTotalExpensesByBudgetAndUser(Budget budget, User user);
+    List<Expense> findAllByUserId(Long userId);
 
 
 

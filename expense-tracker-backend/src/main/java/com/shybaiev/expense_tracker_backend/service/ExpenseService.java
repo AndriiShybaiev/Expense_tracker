@@ -65,6 +65,10 @@ public class ExpenseService {
         return expenseRepository.findAllByUser(user);
     }
 
+    public List<Expense> getAllExpensesByUserId(Long userId){
+        return expenseRepository.findAllByUserId(userId);
+    }
+
     public List<Expense> getAllExpensesByBudget(Budget budget){
         return expenseRepository.findAllByBudget(budget);
     }

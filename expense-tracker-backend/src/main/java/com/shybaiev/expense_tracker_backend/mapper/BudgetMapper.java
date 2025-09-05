@@ -1,5 +1,6 @@
 package com.shybaiev.expense_tracker_backend.mapper;
 
+import com.shybaiev.expense_tracker_backend.dto.BudgetCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.dto.BudgetDto;
 import com.shybaiev.expense_tracker_backend.entity.Budget;
 import com.shybaiev.expense_tracker_backend.entity.User;
@@ -19,16 +20,15 @@ public class BudgetMapper {
         return budgetDto;
     }
 
-    public Budget toEntity(BudgetDto budgetDto) {
+    public Budget toEntity(BudgetCreateUpdateDto budgetCreateUpdateDto) {
         Budget budget = new Budget();
-        budget.setId(budgetDto.getId());
-        budget.setAmount(budgetDto.getAmount());
-        budget.setName(budgetDto.getName());
-        budget.setDescription(budgetDto.getDescription());
-        budget.setTimePeriod(budgetDto.getTimePeriod());
-        budget.setStartDate(budgetDto.getStartDate());
+        budget.setAmount(budgetCreateUpdateDto.getAmount());
+        budget.setName(budgetCreateUpdateDto.getName());
+        budget.setDescription(budgetCreateUpdateDto.getDescription());
+        budget.setTimePeriod(budgetCreateUpdateDto.getTimePeriod());
+        budget.setStartDate(budgetCreateUpdateDto.getStartDate());
         User user = new User();
-        user.setId(budgetDto.getUserId());
+        user.setId(budgetCreateUpdateDto.getUserId());
         budget.setUser(user);
         return budget;
     }

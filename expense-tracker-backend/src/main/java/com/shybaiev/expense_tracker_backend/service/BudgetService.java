@@ -7,7 +7,6 @@ import com.shybaiev.expense_tracker_backend.repository.BudgetRepository;
 import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

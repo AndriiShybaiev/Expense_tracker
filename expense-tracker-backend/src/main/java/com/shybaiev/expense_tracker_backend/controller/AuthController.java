@@ -9,6 +9,7 @@ import com.shybaiev.expense_tracker_backend.mapper.UserMapper;
 import com.shybaiev.expense_tracker_backend.repository.UserRepository;
 import com.shybaiev.expense_tracker_backend.security.JwtUtil;
 import com.shybaiev.expense_tracker_backend.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,8 +30,8 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@RequestBody UserRegisterDto dto) {
-        User user = userService.registerUser(dto); // тут сервис делает всё сам
+    public ResponseEntity<UserDto> register(@Valid @RequestBody UserRegisterDto dto) {
+        User user = userService.registerUser(dto);
         UserDto responseDto = userMapper.toDto(user);
         URI location = URI.create("/users/" + user.getId());
         return ResponseEntity.created(location).body(responseDto);
@@ -39,7 +40,7 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequestDto request) {
+    public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequestDto request) {
         User user = userService.authenticate(request.getEmail(), request.getPassword());
         String token = jwtUtil.generateToken(user);
         return ResponseEntity.ok(new JwtResponse(token));

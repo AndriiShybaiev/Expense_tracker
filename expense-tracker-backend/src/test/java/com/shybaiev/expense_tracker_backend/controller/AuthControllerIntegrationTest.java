@@ -1,7 +1,9 @@
 package com.shybaiev.expense_tracker_backend.controller;
 
+import com.shybaiev.expense_tracker_backend.entity.Role;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import com.shybaiev.expense_tracker_backend.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -29,6 +31,11 @@ class AuthControllerIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @BeforeEach
+    void setup() {
+        userRepository.deleteAll();
+    }
+
     @Test
     void testRegisterUser() throws Exception {
         // language=JSON
@@ -49,11 +56,103 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.username").value("newuser"))
                 .andExpect(jsonPath("$.email").value("newuser@email.com"));
 
-        // 2. Check if use in DB
+        // 2. Check if user is in DB
         User saved = userRepository.findByEmail("newuser@email.com").orElseThrow();
         assertThat(saved.getUsername()).isEqualTo("newuser");
 
-        // 3. Check password
+        // 3. Check password is encoded
         assertThat(passwordEncoder.matches("plainpassword", saved.getPasswordHash())).isTrue();
+    }
+
+    @Test
+    void loginSuccess() throws Exception {
+        // подготовка пользователя
+        User user = new User();
+        user.setUsername("loginuser");
+        user.setEmail("login@email.com");
+        user.setPasswordHash(passwordEncoder.encode("secret123"));
+        user.setRole(Role.USER);
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        // language=JSON
+        String json = """
+            {
+              "email": "login@email.com",
+              "password": "secret123"
+            }
+            """;
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists());
+    }
+
+    @Test
+    void loginWrongPassword() throws Exception {
+        User user = new User();
+        user.setUsername("loginuser");
+        user.setEmail("login@email.com");
+        user.setPasswordHash(passwordEncoder.encode("secret123"));
+        user.setRole(Role.USER);
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        String json = """
+            {
+              "email": "login@email.com",
+              "password": "wrongpass"
+            }
+            """;
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void loginNonExistingUser() throws Exception {
+        String json = """
+            {
+              "email": "nope@email.com",
+              "password": "whatever"
+            }
+            """;
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void loginMissingEmail() throws Exception {
+        String json = """
+            {
+              "password": "secret123"
+            }
+            """;
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void loginMissingPassword() throws Exception {
+        String json = """
+            {
+              "email": "login@email.com"
+            }
+            """;
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isBadRequest());
     }
 }

@@ -2,6 +2,7 @@ package com.shybaiev.expense_tracker_backend.mapper;
 
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
 import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
+import com.shybaiev.expense_tracker_backend.dto.UserRegisterDto;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,14 @@ public class UserMapper {
         if (dto.getEnabled() != null) {
             user.setEnabled(dto.getEnabled());
         }
+        return user;
+    }
+
+    public User registerToEntity(UserRegisterDto dto) {
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setPasswordHash(dto.getPassword());
         return user;
     }
 }

@@ -9,6 +9,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -26,13 +27,27 @@ public class BudgetController {
     private final BudgetService budgetService;
     private final BudgetMapper budgetMapper;
 
+//    @PostMapping
+//    public ResponseEntity<BudgetDto> addBudget(@RequestBody BudgetCreateUpdateDto budgetCreateUpdateDto) {
+//        Budget budget = budgetMapper.toEntity(budgetCreateUpdateDto);
+//        Budget saved = budgetService.createBudget(budget);
+//        URI location = URI.create("/budgets/" + saved.getId());
+//        return ResponseEntity.created(location).body(budgetMapper.toDto(saved));
+//    }
+
     @PostMapping
-    public ResponseEntity<BudgetDto> addBudget(@RequestBody BudgetCreateUpdateDto budgetCreateUpdateDto) {
-        Budget budget = budgetMapper.toEntity(budgetCreateUpdateDto);
-        Budget saved = budgetService.createBudget(budget);
+    public ResponseEntity<BudgetDto> addBudget(@RequestBody BudgetCreateUpdateDto budgetCreateUpdateDto,
+                                               Authentication authentication) {
+        // достаем email/username текущего пользователя из токена
+        String email = authentication.getName();
+
+        Budget saved = budgetService.createBudgetForUser(budgetCreateUpdateDto, email);
+
         URI location = URI.create("/budgets/" + saved.getId());
         return ResponseEntity.created(location).body(budgetMapper.toDto(saved));
     }
+
+
     @GetMapping("/{id}")
     public ResponseEntity<BudgetDto> getBudgetById(@PathVariable Long id) {
         Optional<Budget> maybeBudget = budgetService.getBudgetById(id);

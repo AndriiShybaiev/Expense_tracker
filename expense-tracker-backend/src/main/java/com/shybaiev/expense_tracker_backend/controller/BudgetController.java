@@ -43,8 +43,10 @@ public class BudgetController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BudgetDto> getBudgetById(@PathVariable Long id) {
-        Optional<Budget> maybeBudget = budgetService.getBudgetById(id);
+    public ResponseEntity<BudgetDto> getBudgetById(@PathVariable Long id,
+                                                   @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        Optional<Budget> maybeBudget = budgetService.getBudgetByIdForUser(id, email);
         if (maybeBudget.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

@@ -46,7 +46,7 @@ class BudgetControllerTest {
     private BudgetMapper budgetMapper;
 
     @Test
-    @WithMockUser(username = "testuser")
+    @WithMockUser(username = "testuser@email.com")
     void testAddBudget() throws Exception {
         BudgetCreateUpdateDto createDto = new BudgetCreateUpdateDto();
         createDto.setAmount(new BigDecimal("250.00"));
@@ -65,7 +65,7 @@ class BudgetControllerTest {
         responseDto.setName("Monthly");
         responseDto.setTimePeriod("MONTH");
 
-        when(budgetService.createBudgetForUser(eq(createDto), eq("testuser")))
+        when(budgetService.createBudgetForUser(eq(createDto), eq("testuser@email.com")))
                 .thenReturn(saved);
 
         when(budgetMapper.toDto(saved)).thenReturn(responseDto);
@@ -83,6 +83,7 @@ class BudgetControllerTest {
 
 
     @Test
+    @WithMockUser(username = "testuser")
     void testGetBudgetByIdFound() throws Exception {
         Budget entity = new Budget();
         entity.setId(5L);
@@ -96,7 +97,7 @@ class BudgetControllerTest {
         dto.setName("Weekly");
         dto.setTimePeriod("WEEK");
 
-        when(budgetService.getBudgetById(5L)).thenReturn(Optional.of(entity));
+        when(budgetService.getBudgetByIdForUser(5L,"testuser")).thenReturn(Optional.of(entity));
         when(budgetMapper.toDto(entity)).thenReturn(dto);
 
         mockMvc.perform(get("/budgets/5"))

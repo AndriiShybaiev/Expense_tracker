@@ -1,5 +1,8 @@
 package com.shybaiev.expense_tracker_backend.configuration;
+
+import com.shybaiev.expense_tracker_backend.security.CustomUserDetailsService;
 import com.shybaiev.expense_tracker_backend.security.JwtAuthenticationFilter;
+import com.shybaiev.expense_tracker_backend.security.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,11 +17,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
 
-    private final JwtAuthenticationFilter jwtFilter;
+    public SecurityConfig(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtUtil, userDetailsService);
     }
 
     @Bean
@@ -26,7 +35,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger UI
+                        // Swagger & H2 console
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml/**",
@@ -35,11 +44,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/auth/**"
                         ).permitAll()
-                        // auth for the rest
+                        // auth required for everything else
                         .anyRequest().authenticated()
                 )
-//                .formLogin(AbstractAuthenticationFilterConfigurer::permitAll); // or JWT
-                    .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

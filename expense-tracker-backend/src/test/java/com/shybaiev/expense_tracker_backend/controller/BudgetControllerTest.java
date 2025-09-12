@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,14 +46,12 @@ class BudgetControllerTest {
     private BudgetMapper budgetMapper;
 
     @Test
+    @WithMockUser(username = "testuser")
     void testAddBudget() throws Exception {
         BudgetCreateUpdateDto createDto = new BudgetCreateUpdateDto();
-
-        Budget entityToSave = new Budget();
-        entityToSave.setAmount(new BigDecimal("250.00"));
-        entityToSave.setName("Monthly");
-        entityToSave.setTimePeriod("MONTH");
-        // other fields can be set as needed
+        createDto.setAmount(new BigDecimal("250.00"));
+        createDto.setName("Monthly");
+        createDto.setTimePeriod("MONTH");
 
         Budget saved = new Budget();
         saved.setId(42L);
@@ -65,8 +65,9 @@ class BudgetControllerTest {
         responseDto.setName("Monthly");
         responseDto.setTimePeriod("MONTH");
 
-        when(budgetMapper.toEntity(any(BudgetCreateUpdateDto.class))).thenReturn(entityToSave);
-        when(budgetService.createBudget(any(Budget.class))).thenReturn(saved);
+        when(budgetService.createBudgetForUser(eq(createDto), eq("testuser")))
+                .thenReturn(saved);
+
         when(budgetMapper.toDto(saved)).thenReturn(responseDto);
 
         mockMvc.perform(post("/budgets")
@@ -79,6 +80,7 @@ class BudgetControllerTest {
                 .andExpect(jsonPath("$.name").value("Monthly"))
                 .andExpect(jsonPath("$.timePeriod").value("MONTH"));
     }
+
 
     @Test
     void testGetBudgetByIdFound() throws Exception {

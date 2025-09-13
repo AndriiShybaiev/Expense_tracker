@@ -54,8 +54,9 @@ public class BudgetController {
         return ResponseEntity.ok(body);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBudgetById(@PathVariable Long id) {
-        budgetService.deleteBudget(id);
+    public ResponseEntity<Void> deleteBudgetById(@PathVariable Long id, @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        budgetService.deleteBudgetForUser(id, email);
         return ResponseEntity.noContent().build(); // 204 No Content
     }
     @PatchMapping("/{id}")
@@ -71,8 +72,9 @@ public class BudgetController {
         }
     }
     @GetMapping
-    public ResponseEntity<List<BudgetDto>> getAllBudgets() {
-        List<Budget> budgets = budgetService.getAllBudgets();
+    public ResponseEntity<List<BudgetDto>> getAllBudgets(@AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        List<Budget> budgets = budgetService.getAllBudgetsForUser(email);
         List<BudgetDto> result = new ArrayList<>(budgets.size());
         for (Budget b : budgets) {
             result.add(budgetMapper.toDto(b));

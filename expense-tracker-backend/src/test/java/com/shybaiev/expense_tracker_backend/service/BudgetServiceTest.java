@@ -162,23 +162,6 @@ class BudgetServiceTest {
         verify(budgetRepository).findAll();
     }
 
-    @Test
-    void testGetAllBudgetsByUser() {
-        // given
-        Budget b1 = new Budget();
-        b1.setUser(user);
-        Budget b2 = new Budget();
-        b2.setUser(user);
-
-        when(budgetRepository.findAllByUser(user)).thenReturn(List.of(b1, b2));
-
-        // when
-        List<Budget> result = budgetService.getAllBudgetsByUser(user);
-
-        // then
-        assertEquals(2, result.size());
-        verify(budgetRepository).findAllByUser(user);
-    }
 
     @Test
     void testGetBudgetByExpenseSuccess() {

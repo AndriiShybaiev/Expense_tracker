@@ -44,10 +44,6 @@ public class BudgetService {
         return budgetRepository.save(budget);
     }
 
-    public Optional<Budget> getBudgetById(Long id) {
-        return budgetRepository.findById(id);
-    }
-
     public Optional<Budget> getBudgetByIdForUser(Long id, String userEmail) {
         Optional<User> maybeUser = userRepository.findByEmail(userEmail);
         if (maybeUser.isEmpty()) {

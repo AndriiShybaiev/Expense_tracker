@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -109,28 +110,31 @@ class BudgetControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testGetBudgetByIdNotFound() throws Exception {
-        when(budgetService.getBudgetById(404L)).thenReturn(Optional.empty());
+        when(budgetService.getBudgetByIdForUser(404L, "testuser@email.com"))
+                .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/budgets/404"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testDeleteBudgetById() throws Exception {
-        // Mock does nothing => controller returns 204
+        doNothing().when(budgetService).deleteBudgetForUser(7L, "testuser@email.com");
+
         mockMvc.perform(delete("/budgets/7"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testUpdateBudgetOk() throws Exception {
         BudgetCreateUpdateDto updateDto = new BudgetCreateUpdateDto();
-
-        Budget mapped = new Budget();
-        mapped.setAmount(new BigDecimal("300.50"));
-        mapped.setName("Updated");
-        mapped.setTimePeriod("MONTH");
+        updateDto.setAmount(new BigDecimal("300.50"));
+        updateDto.setName("Updated");
+        updateDto.setTimePeriod("MONTH");
 
         Budget updated = new Budget();
         updated.setId(3L);
@@ -144,8 +148,8 @@ class BudgetControllerTest {
         dto.setName("Updated");
         dto.setTimePeriod("MONTH");
 
-        when(budgetMapper.toEntity(any(BudgetCreateUpdateDto.class))).thenReturn(mapped);
-        when(budgetService.updateBudget(3L, mapped)).thenReturn(updated);
+        when(budgetService.updateBudgetForUser(eq(3L), any(BudgetCreateUpdateDto.class), eq("testuser@email.com")))
+                .thenReturn(updated);
         when(budgetMapper.toDto(updated)).thenReturn(dto);
 
         mockMvc.perform(patch("/budgets/3")
@@ -159,12 +163,12 @@ class BudgetControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testUpdateBudgetNotFound() throws Exception {
         BudgetCreateUpdateDto updateDto = new BudgetCreateUpdateDto();
 
-        Budget mapped = new Budget();
-        when(budgetMapper.toEntity(any(BudgetCreateUpdateDto.class))).thenReturn(mapped);
-        when(budgetService.updateBudget(999L, mapped)).thenThrow(new EntityNotFoundException("not found"));
+        when(budgetService.updateBudgetForUser(eq(999L), any(BudgetCreateUpdateDto.class), eq("testuser@email.com")))
+                .thenThrow(new EntityNotFoundException("not found"));
 
         mockMvc.perform(patch("/budgets/999")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -216,11 +220,12 @@ class BudgetControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testGetTotalExpensesForBudgetFound() throws Exception {
         Budget budget = new Budget();
         budget.setId(5L);
 
-        when(budgetService.getBudgetById(5L)).thenReturn(Optional.of(budget));
+        when(budgetService.getBudgetByIdForUser(5L,"testuser@email.com")).thenReturn(Optional.of(budget));
         when(budgetService.getTotalExpensesForBudget(budget)).thenReturn(new BigDecimal("123.45"));
 
         mockMvc.perform(get("/budgets/budgets/5/expenses/total"))
@@ -229,8 +234,9 @@ class BudgetControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testGetTotalExpensesForBudgetNotFound() throws Exception {
-        when(budgetService.getBudgetById(999L)).thenReturn(Optional.empty());
+        when(budgetService.getBudgetByIdForUser(999L,"testuser@email.com")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/budgets/budgets/999/expenses/total"))
                 .andExpect(status().isNotFound());

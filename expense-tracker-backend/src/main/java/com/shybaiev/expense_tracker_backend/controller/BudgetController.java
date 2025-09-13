@@ -60,10 +60,11 @@ public class BudgetController {
     }
     @PatchMapping("/{id}")
     public ResponseEntity<BudgetDto> updateBudget(@PathVariable Long id,
-                                                  @Valid @RequestBody BudgetCreateUpdateDto budgetCreateUpdateDto) {
-        Budget budget = budgetMapper.toEntity(budgetCreateUpdateDto);
+                                                  @Valid @RequestBody BudgetCreateUpdateDto budgetCreateUpdateDto,
+                                                  @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
         try {
-            Budget updated = budgetService.updateBudget(id, budget);
+            Budget updated = budgetService.updateBudgetForUser(id, budgetCreateUpdateDto, email);
             return ResponseEntity.ok(budgetMapper.toDto(updated));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
@@ -79,8 +80,9 @@ public class BudgetController {
         return ResponseEntity.ok(result);
     }
     @GetMapping("/budgets/{id}/expenses/total")
-    public ResponseEntity<BigDecimal> getTotalExpensesForBudget(@PathVariable Long id) {
-        Optional<Budget> maybeBudget = budgetService.getBudgetById(id);
+    public ResponseEntity<BigDecimal> getTotalExpensesForBudget(@PathVariable Long id, @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        Optional<Budget> maybeBudget = budgetService.getBudgetByIdForUser(id,email);
         if (maybeBudget.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

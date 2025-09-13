@@ -227,7 +227,7 @@ class BudgetControllerTest {
         budget.setId(5L);
 
         when(budgetService.getBudgetByIdForUser(5L,"testuser@email.com")).thenReturn(Optional.of(budget));
-        when(budgetService.getTotalExpensesForBudget(budget)).thenReturn(new BigDecimal("123.45"));
+        when(budgetService.getTotalExpensesForBudgetForUser(budget,"testuser@email.com")).thenReturn(new BigDecimal("123.45"));
 
         mockMvc.perform(get("/budgets/budgets/5/expenses/total"))
                 .andExpect(status().isOk())

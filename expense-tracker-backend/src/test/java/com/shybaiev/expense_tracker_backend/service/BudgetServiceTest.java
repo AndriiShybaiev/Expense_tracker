@@ -1,11 +1,14 @@
 package com.shybaiev.expense_tracker_backend.service;
 
+import com.shybaiev.expense_tracker_backend.dto.BudgetCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.Budget;
 import com.shybaiev.expense_tracker_backend.entity.Expense;
 import com.shybaiev.expense_tracker_backend.entity.Role;
 import com.shybaiev.expense_tracker_backend.entity.User;
+import com.shybaiev.expense_tracker_backend.mapper.BudgetMapper;
 import com.shybaiev.expense_tracker_backend.repository.BudgetRepository;
 import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
+import com.shybaiev.expense_tracker_backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.test.context.support.WithMockUser;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,13 +40,21 @@ class BudgetServiceTest {
     private ExpenseRepository expenseRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private ExpenseService expenseService;
+
+    @Mock
+    private BudgetMapper budgetMapper;
 
     @InjectMocks
     private BudgetService budgetService;
 
     private User user;
     private Budget existingBudget;
+    private BudgetCreateUpdateDto budgetCreateUpdateDto;
+
 
     @BeforeEach
     void setUp() {
@@ -63,51 +76,67 @@ class BudgetServiceTest {
         existingBudget.setStartDate(LocalDate.of(2024, 1, 1));
         existingBudget.setUser(user);
 
+        budgetCreateUpdateDto = new BudgetCreateUpdateDto();
+        budgetCreateUpdateDto.setAmount(new BigDecimal("100.00"));
+        budgetCreateUpdateDto.setName("Groceries");
+        budgetCreateUpdateDto.setDescription("Monthly groceries budget");
+        budgetCreateUpdateDto.setTimePeriod("MONTHLY");
+        budgetCreateUpdateDto.setStartDate(LocalDate.of(2024, 1, 1));
+        budgetCreateUpdateDto.setUserId(1L);
+
+
         user.getBudgets().add(existingBudget);
     }
 
     @Test
-    void testCreateBudget() {
+    @WithMockUser(username = "email@test.com")
+    void testCreateBudgetForUser() {
         // given
         when(budgetRepository.save(existingBudget)).thenReturn(existingBudget);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(budgetMapper.toEntity(budgetCreateUpdateDto)).thenReturn(existingBudget);
 
         // when
-        Budget result = budgetService.createBudget(existingBudget);
+        Budget result = budgetService.createBudgetForUser(budgetCreateUpdateDto,"email@test.com");
 
         // then
         assertEquals(existingBudget, result);
         verify(budgetRepository).save(existingBudget);
     }
 
-//    @Test
-//    void testGetBudgetByIdForUser() {
-//        // given
-//        when(budgetRepository.findById(existingBudget.getId())).thenReturn(Optional.of(existingBudget));
-//
-//        // when
-//        Optional<Budget> result = budgetService.getBudgetByIdForUser(existingBudget.getId());
-//
-//        // then
-//        assertTrue(result.isPresent());
-//        assertEquals(existingBudget, result.get());
-//        verify(budgetRepository).findById(existingBudget.getId());
-//    }
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testGetBudgetByIdForUser() {
+        // given
+        when(budgetRepository.findById(existingBudget.getId())).thenReturn(Optional.of(existingBudget));
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+
+        // when
+        Optional<Budget> result = budgetService.getBudgetByIdForUser(existingBudget.getId(),"email@test.com");
+
+        // then
+        assertTrue(result.isPresent());
+        assertEquals(existingBudget, result.get());
+        verify(budgetRepository).findById(existingBudget.getId());
+    }
 
     @Test
+    @WithMockUser(username = "email@test.com")
     void testUpdateBudgetSuccess() {
         // given
-        Budget updated = new Budget();
-        updated.setAmount(new BigDecimal("250.50"));
-        updated.setName("Updated Name");
-        updated.setDescription("Updated Desc");
-        updated.setTimePeriod("WEEKLY");
-        updated.setStartDate(LocalDate.of(2024, 2, 1));
+        BudgetCreateUpdateDto budgetCreateUpdateDtoUpdated = new BudgetCreateUpdateDto();
+        budgetCreateUpdateDtoUpdated.setAmount(new BigDecimal("250.50"));
+        budgetCreateUpdateDtoUpdated.setName("Updated Name");
+        budgetCreateUpdateDtoUpdated.setDescription("Updated Desc");
+        budgetCreateUpdateDtoUpdated.setTimePeriod("WEEKLY");
+        budgetCreateUpdateDtoUpdated.setStartDate(LocalDate.of(2024, 2, 1));
 
         when(budgetRepository.findById(1L)).thenReturn(Optional.of(existingBudget));
         when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
 
         // when
-        Budget result = budgetService.updateBudget(1L, updated);
+        Budget result = budgetService.updateBudgetForUser(1L, budgetCreateUpdateDtoUpdated,"email@test.com");
 
         // then
         assertEquals(new BigDecimal("250.50"), result.getAmount());
@@ -121,124 +150,263 @@ class BudgetServiceTest {
     }
 
     @Test
+    @WithMockUser(username = "email@test.com")
     void testUpdateBudgetNotFound() {
         // given
         when(budgetRepository.findById(999L)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
 
         // when + then
-        assertThrows(EntityNotFoundException.class, () -> budgetService.updateBudget(999L, new Budget()));
+        assertThrows(EntityNotFoundException.class, () -> budgetService.updateBudgetForUser(999L, budgetCreateUpdateDto,"email@test.com"));
 
         verify(budgetRepository).findById(999L);
         verify(budgetRepository, never()).save(any(Budget.class));
     }
 
     @Test
-    void testGetAllBudgets() {
-        // given
-        Budget b1 = new Budget();
-        b1.setId(1L);
-        b1.setAmount(new BigDecimal("10.00"));
-        b1.setName("B1");
-        b1.setTimePeriod("MONTHLY");
-        b1.setStartDate(LocalDate.now());
-        b1.setUser(user);
-
-        Budget b2 = new Budget();
-        b2.setId(2L);
-        b2.setAmount(new BigDecimal("20.00"));
-        b2.setName("B2");
-        b2.setTimePeriod("MONTHLY");
-        b2.setStartDate(LocalDate.now());
-        b2.setUser(user);
-
-        when(budgetRepository.findAll()).thenReturn(List.of(b1, b2));
-
-        // when
-        List<Budget> result = budgetService.getAllBudgets();
-
-        // then
-        assertEquals(2, result.size());
-        assertTrue(result.containsAll(List.of(b1, b2)));
-        verify(budgetRepository).findAll();
-    }
-
-
-    @Test
-    void testGetBudgetByExpenseSuccess() {
+    @WithMockUser(username = "email@test.com")
+    void testGetBudgetByExpenseForUser_Success() {
         // given
         Expense expense = new Expense();
-        expense.setId(5L);
-        when(budgetRepository.findByExpenses(expense)).thenReturn(Optional.of(existingBudget));
+        expense.setId(1L);
+
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        Budget budget = new Budget();
+        budget.setId(10L);
+        budget.setUser(user);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(budgetRepository.findByExpenses(expense)).thenReturn(Optional.of(budget));
 
         // when
-        Budget result = budgetService.getBudgetByExpense(expense);
+        Budget result = budgetService.getBudgetByExpenseForUser(expense, "email@test.com");
 
         // then
-        assertNotNull(result);
-        assertEquals(existingBudget, result);
-        verify(budgetRepository, atLeastOnce()).findByExpenses(expense);
+        assertEquals(budget, result);
+        verify(userRepository).findByEmail("email@test.com");
+        verify(budgetRepository).findByExpenses(expense);
     }
 
     @Test
-    void testGetBudgetByExpenseNotFound() {
-        // given
+    @WithMockUser(username = "email@test.com")
+    void testGetBudgetByExpenseForUser_UserNotFound() {
         Expense expense = new Expense();
-        expense.setId(404L);
+        expense.setId(1L);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class,
+                () -> budgetService.getBudgetByExpenseForUser(expense, "email@test.com"));
+
+        verify(userRepository).findByEmail("email@test.com");
+        verifyNoInteractions(budgetRepository);
+    }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testGetBudgetByExpenseForUser_BudgetNotFound() {
+        Expense expense = new Expense();
+        expense.setId(1L);
+
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
         when(budgetRepository.findByExpenses(expense)).thenReturn(Optional.empty());
 
-        // when + then
-        assertThrows(EntityNotFoundException.class, () -> budgetService.getBudgetByExpense(expense));
-        verify(budgetRepository, atLeastOnce()).findByExpenses(expense);
+        assertThrows(EntityNotFoundException.class,
+                () -> budgetService.getBudgetByExpenseForUser(expense, "email@test.com"));
+
+        verify(userRepository).findByEmail("email@test.com");
+        verify(budgetRepository).findByExpenses(expense);
     }
 
     @Test
-    void testDeleteBudgetSuccess() {
+    @WithMockUser(username = "email@test.com")
+    void testGetBudgetByExpenseForUser_AccessDenied() {
+        Expense expense = new Expense();
+        expense.setId(1L);
+
+        User currentUser = new User();
+        currentUser.setId(100L);
+        currentUser.setEmail("email@test.com");
+
+        User anotherUser = new User();
+        anotherUser.setId(200L);
+        anotherUser.setEmail("other@test.com");
+
+        Budget budget = new Budget();
+        budget.setId(10L);
+        budget.setUser(anotherUser);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(currentUser));
+        when(budgetRepository.findByExpenses(expense)).thenReturn(Optional.of(budget));
+
+        assertThrows(AccessDeniedException.class,
+                () -> budgetService.getBudgetByExpenseForUser(expense, "email@test.com"));
+
+        verify(userRepository).findByEmail("email@test.com");
+        verify(budgetRepository).findByExpenses(expense);
+    }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testDeleteBudgetForUser_Success() {
         // given
-        Long id = 1L;
-        when(budgetRepository.existsById(id)).thenReturn(true);
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        Budget budget = new Budget();
+        budget.setId(10L);
+        budget.setUser(user);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(budgetRepository.findById(10L)).thenReturn(Optional.of(budget));
 
         // when
-        budgetService.deleteBudget(id);
+        budgetService.deleteBudgetForUser(10L, "email@test.com");
 
         // then
-        verify(budgetRepository).existsById(id);
-        verify(budgetRepository).deleteById(id);
+        verify(budgetRepository).delete(budget);
     }
 
     @Test
-    void testDeleteBudgetNotFound() {
+    @WithMockUser(username = "email@test.com")
+    void testDeleteBudgetForUser_UserNotFound() {
         // given
-        Long id = 999L;
-        when(budgetRepository.existsById(id)).thenReturn(false);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.empty());
 
         // when + then
-        assertThrows(EntityNotFoundException.class, () -> budgetService.deleteBudget(id));
-        verify(budgetRepository).existsById(id);
-        verify(budgetRepository, never()).deleteById(anyLong());
+        assertThrows(EntityNotFoundException.class,
+                () -> budgetService.deleteBudgetForUser(10L, "email@test.com"));
+
+        verifyNoInteractions(budgetRepository);
     }
 
     @Test
-    void testGetTotalExpensesForBudget() {
+    @WithMockUser(username = "email@test.com")
+    void testDeleteBudgetForUser_BudgetNotFound() {
         // given
-        when(expenseRepository.getTotalExpensesByBudget(existingBudget))
-                .thenReturn(new BigDecimal("33.33"));
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(budgetRepository.findById(10L)).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> budgetService.deleteBudgetForUser(10L, "email@test.com"));
+    }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testDeleteBudgetForUser_AccessDenied() {
+        // given
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        User anotherUser = new User();
+        anotherUser.setId(200L);
+        anotherUser.setEmail("other@test.com");
+
+        Budget budget = new Budget();
+        budget.setId(10L);
+        budget.setUser(anotherUser);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(budgetRepository.findById(10L)).thenReturn(Optional.of(budget));
+
+        // when + then
+        assertThrows(AccessDeniedException.class,
+                () -> budgetService.deleteBudgetForUser(10L, "email@test.com"));
+
+        verify(budgetRepository, never()).delete(any(Budget.class));
+    }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testGetTotalExpensesForBudgetForUser_Success() {
+        // given
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        Budget budget = new Budget();
+        budget.setId(10L);
+        budget.setUser(user);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.getTotalExpensesByBudget(budget)).thenReturn(new BigDecimal("123.45"));
 
         // when
-        BigDecimal total = budgetService.getTotalExpensesForBudget(existingBudget);
+        BigDecimal total = budgetService.getTotalExpensesForBudgetForUser(budget, "email@test.com");
 
         // then
-        assertEquals(new BigDecimal("33.33"), total);
-        verify(expenseRepository).getTotalExpensesByBudget(existingBudget);
+        assertEquals(new BigDecimal("123.45"), total);
+        verify(userRepository).findByEmail("email@test.com");
+        verify(expenseRepository).getTotalExpensesByBudget(budget);
     }
 
     @Test
-    void testIsUserOverBudgetInMonth_NoBudgets() {
+    @WithMockUser(username = "email@test.com")
+    void testGetTotalExpensesForBudgetForUser_UserNotFound() {
         // given
-        User newUser = new User();
-        newUser.setBudgets(new ArrayList<>());
+        Budget budget = new Budget();
+        budget.setId(10L);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> budgetService.getTotalExpensesForBudgetForUser(budget, "email@test.com"));
+
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testGetTotalExpensesForBudgetForUser_AccessDenied() {
+        // given
+        User user = new User();
+        user.setId(100L);
+        user.setEmail("email@test.com");
+
+        User anotherUser = new User();
+        anotherUser.setId(200L);
+        anotherUser.setEmail("other@test.com");
+
+        Budget budget = new Budget();
+        budget.setId(10L);
+        budget.setUser(anotherUser);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+
+        // when + then
+        assertThrows(AccessDeniedException.class,
+                () -> budgetService.getTotalExpensesForBudgetForUser(budget, "email@test.com"));
+
+        verify(expenseRepository, never()).getTotalExpensesByBudget(any(Budget.class));
+    }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testIsUserOverBudgetInMonthForUser_NoBudgets() {
+        // given
+        User user = new User();
+        user.setEmail("email@test.com");
+        user.setBudgets(new ArrayList<>());
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
 
         // when
-        boolean result = budgetService.isUserOverBudgetInMonth(newUser, YearMonth.of(2024, 2));
+        boolean result = budgetService.isUserOverBudgetInMonthForUser("email@test.com", YearMonth.of(2024, 2));
 
         // then
         assertFalse(result);
@@ -246,36 +414,64 @@ class BudgetServiceTest {
     }
 
     @Test
-    void testIsUserOverBudgetInMonth_NotOver() {
+    @WithMockUser(username = "email@test.com")
+    void testIsUserOverBudgetInMonthForUser_NotOver() {
         // given
-        YearMonth ym = YearMonth.of(2024, 2);
-        existingBudget.setAmount(new BigDecimal("100.00"));
-        user.setBudgets(new ArrayList<>(List.of(existingBudget)));
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@test.com");
 
-        when(expenseService.getTotalExpensesForUserInMonth(user, ym)).thenReturn(new BigDecimal("99.99"));
+        Budget budget = new Budget();
+        budget.setAmount(new BigDecimal("100.00"));
+        user.setBudgets(new ArrayList<>(List.of(budget)));
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseService.getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2)))
+                .thenReturn(new BigDecimal("99.99"));
 
         // when
-        boolean result = budgetService.isUserOverBudgetInMonth(user, ym);
+        boolean result = budgetService.isUserOverBudgetInMonthForUser("email@test.com", YearMonth.of(2024, 2));
 
         // then
         assertFalse(result);
-        verify(expenseService).getTotalExpensesForUserInMonth(user, ym);
+        verify(expenseService).getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2));
     }
 
     @Test
-    void testIsUserOverBudgetInMonth_Over() {
+    @WithMockUser(username = "email@test.com")
+    void testIsUserOverBudgetInMonthForUser_Over() {
         // given
-        YearMonth ym = YearMonth.of(2024, 2);
-        existingBudget.setAmount(new BigDecimal("100.00"));
-        user.setBudgets(new ArrayList<>(List.of(existingBudget)));
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("email@test.com");
 
-        when(expenseService.getTotalExpensesForUserInMonth(user, ym)).thenReturn(new BigDecimal("150.00"));
+        Budget budget = new Budget();
+        budget.setAmount(new BigDecimal("100.00"));
+        user.setBudgets(new ArrayList<>(List.of(budget)));
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseService.getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2)))
+                .thenReturn(new BigDecimal("150.00"));
 
         // when
-        boolean result = budgetService.isUserOverBudgetInMonth(user, ym);
+        boolean result = budgetService.isUserOverBudgetInMonthForUser("email@test.com", YearMonth.of(2024, 2));
 
         // then
         assertTrue(result);
-        verify(expenseService).getTotalExpensesForUserInMonth(user, ym);
+        verify(expenseService).getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2));
     }
+
+    @Test
+    @WithMockUser(username = "email@test.com")
+    void testIsUserOverBudgetInMonthForUser_UserNotFound() {
+        // given
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> budgetService.isUserOverBudgetInMonthForUser("email@test.com", YearMonth.of(2024, 2)));
+
+        verifyNoInteractions(expenseService);
+    }
+
 }

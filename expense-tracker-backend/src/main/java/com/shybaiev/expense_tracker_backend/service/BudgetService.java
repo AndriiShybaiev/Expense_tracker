@@ -30,9 +30,6 @@ public class BudgetService {
     private final UserRepository userRepository;
     private final BudgetMapper budgetMapper;
 
-    public Budget createBudget(Budget budget) {
-        return budgetRepository.save(budget);
-    }
 
     public Budget createBudgetForUser(BudgetCreateUpdateDto dto, String email) {
         User user = userRepository.findByEmail(email)
@@ -64,32 +61,6 @@ public class BudgetService {
         } else {
             // found, but doesnt belong to user
             return Optional.empty();
-        }
-    }
-
-    public Budget updateBudget(Long existingBudgetId, Budget updatedBudget) {
-        Optional<Budget> foundBudget = budgetRepository.findById(existingBudgetId);
-        if (foundBudget.isPresent()) {
-            Budget existingBudget = foundBudget.get();
-            if (updatedBudget.getAmount() != null) {
-                existingBudget.setAmount(updatedBudget.getAmount());
-            }
-            if (updatedBudget.getName() != null) {
-                existingBudget.setName(updatedBudget.getName());
-            }
-            if (updatedBudget.getDescription() != null) {
-                existingBudget.setDescription(updatedBudget.getDescription());
-            }
-            if (updatedBudget.getTimePeriod() != null) {
-                existingBudget.setTimePeriod(updatedBudget.getTimePeriod());
-            }
-            if (updatedBudget.getStartDate() != null) {
-                existingBudget.setStartDate(updatedBudget.getStartDate());
-            }
-            return budgetRepository.save(existingBudget);
-        }
-        else {
-            throw new EntityNotFoundException("Budget with id " + existingBudgetId + " not found");
         }
     }
 
@@ -128,16 +99,6 @@ public class BudgetService {
         return budgetRepository.save(existing);
     }
 
-
-
-    public List<Budget> getAllBudgets() {
-        return budgetRepository.findAll();
-    }
-
-    public List<Budget> getAllBudgetsByUser(User user) {
-        return budgetRepository.findAllByUser(user);
-    }
-
     public List<Budget> getAllBudgetsForUser(String userEmail) {
         Optional<User> maybeUser = userRepository.findByEmail(userEmail);
         if (maybeUser.isEmpty()) {
@@ -147,54 +108,63 @@ public class BudgetService {
         return budgetRepository.findAllByUser(user);
     }
 
-    public Budget getBudgetByExpense(Expense expense) {
-        if (budgetRepository.findByExpenses(expense).isPresent()) {
-            return budgetRepository.findByExpenses(expense).get();
+    public Budget getBudgetByExpenseForUser(Expense expense, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userEmail));
+
+        Budget budget = budgetRepository.findByExpenses(expense)
+                .orElseThrow(() -> new EntityNotFoundException("No budget found for expense id: " + expense.getId()));
+
+        if (!budget.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You are not allowed to read this budget");
         }
-        else {
-            throw new EntityNotFoundException("Expense with id " + expense.getId() + " not found");
-        }
-    }
-    public void deleteBudget(Long id) {
-        if (!budgetRepository.existsById(id)) {
-            throw new EntityNotFoundException("Budget with id " + id + " not found");
-        }
-        budgetRepository.deleteById(id);
+
+        return budget;
     }
 
     public void deleteBudgetForUser(Long id, String userEmail) {
-        Optional<User> maybeUser = userRepository.findByEmail(userEmail);
-        if (maybeUser.isEmpty()) {
-            throw new EntityNotFoundException("User not found: " + userEmail);
-        }
-        User user = maybeUser.get();
-        Optional<Budget> maybeBudget = budgetRepository.findById(id);
-        if (maybeBudget.isEmpty()) {
-            throw new EntityNotFoundException("Budget not found: " + id);
-        }
-        Budget budget = maybeBudget.get();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userEmail));
 
-        if (budget.getUser() == null || !Objects.equals(budget.getUser().getId(), user.getId())) {
-            throw new AccessDeniedException("You are not allowed to delete this budget");
+        Budget budget = budgetRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Budget not found: " + id));
+
+        if (!Objects.equals(budget.getUser().getId(), user.getId())) {
+            throw new AccessDeniedException("You are not allowed to delete budget id=" + id);
         }
 
         budgetRepository.delete(budget);
     }
 
-    public BigDecimal getTotalExpensesForBudget(Budget budget) {
+
+    public BigDecimal getTotalExpensesForBudgetForUser(Budget budget, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userEmail));
+
+        if (!Objects.equals(budget.getUser().getId(), user.getId())) {
+            throw new AccessDeniedException("You are not allowed to access this budget");
+        }
+
         return expenseRepository.getTotalExpensesByBudget(budget);
     }
 
+
     @Transactional(readOnly = true)
-    public boolean isUserOverBudgetInMonth(User user, YearMonth yearMonth) {
+    public boolean isUserOverBudgetInMonthForUser(String userEmail, YearMonth yearMonth) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userEmail));
+
         if (user.getBudgets().isEmpty()) {
             return false;
         }
-        Budget budget = user.getBudgets().getFirst(); // в MVP максимум один
+
+        // в MVP максимум один бюджет
+        Budget budget = user.getBudgets().getFirst();
         BigDecimal totalExpenses = expenseService.getTotalExpensesForUserInMonth(user, yearMonth);
 
         return totalExpenses.compareTo(budget.getAmount()) > 0;
     }
+
 
 
 }

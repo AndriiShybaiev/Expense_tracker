@@ -82,15 +82,22 @@ public class BudgetController {
         return ResponseEntity.ok(result);
     }
     @GetMapping("/budgets/{id}/expenses/total")
-    public ResponseEntity<BigDecimal> getTotalExpensesForBudget(@PathVariable Long id, @AuthenticationPrincipal UserDetails user) {
+    public ResponseEntity<BigDecimal> getTotalExpensesForBudget(@PathVariable Long id,
+                                                                @AuthenticationPrincipal UserDetails user) {
         String email = user.getUsername();
-        Optional<Budget> maybeBudget = budgetService.getBudgetByIdForUser(id,email);
+
+        // Получаем бюджет с проверкой принадлежности пользователю
+        Optional<Budget> maybeBudget = budgetService.getBudgetByIdForUser(id, email);
         if (maybeBudget.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        BigDecimal total = budgetService.getTotalExpensesForBudget(maybeBudget.get());
+
+        // Получаем сумму расходов для пользователя
+        BigDecimal total = budgetService.getTotalExpensesForBudgetForUser(maybeBudget.get(), email);
+
         return ResponseEntity.ok(total);
     }
+
 
 }
 

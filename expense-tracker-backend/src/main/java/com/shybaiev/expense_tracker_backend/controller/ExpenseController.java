@@ -9,6 +9,8 @@ import com.shybaiev.expense_tracker_backend.service.ExpenseService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -24,9 +26,10 @@ public class ExpenseController {
     private final ExpenseMapper expenseMapper;
 
     @PostMapping
-    public ResponseEntity<ExpenseDto> addExpense(@RequestBody ExpenseCreateUpdateDto expenseCreateUpdateDto) {
-        Expense expense = expenseMapper.toEntity(expenseCreateUpdateDto);
-        Expense saved = expenseService.createExpense(expense);
+    public ResponseEntity<ExpenseDto> addExpense(@RequestBody ExpenseCreateUpdateDto expenseCreateUpdateDto,
+                                                 @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        Expense saved = expenseService.createExpenseForUser(expenseCreateUpdateDto, email);
         URI location = URI.create("/expenses/" + saved.getId());
         return ResponseEntity.created(location).body(expenseMapper.toDto(saved));
     }

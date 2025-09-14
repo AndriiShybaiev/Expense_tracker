@@ -1,9 +1,12 @@
 package com.shybaiev.expense_tracker_backend.service;
 
+import com.shybaiev.expense_tracker_backend.dto.ExpenseCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.Budget;
 import com.shybaiev.expense_tracker_backend.entity.Expense;
 import com.shybaiev.expense_tracker_backend.entity.User;
+import com.shybaiev.expense_tracker_backend.mapper.ExpenseMapper;
 import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
+import com.shybaiev.expense_tracker_backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,8 +22,16 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ExpenseService {
     private final ExpenseRepository expenseRepository;
+    private final UserRepository userRepository;
+    private final ExpenseMapper expenseMapper;
 
-    public Expense createExpense(Expense expense){
+
+    public Expense createExpenseForUser(ExpenseCreateUpdateDto expenseCreateUpdateDto, String email){
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Expense expense = expenseMapper.toEntity(expenseCreateUpdateDto);
+        expense.setUser(user);
         return expenseRepository.save(expense);
     }
 

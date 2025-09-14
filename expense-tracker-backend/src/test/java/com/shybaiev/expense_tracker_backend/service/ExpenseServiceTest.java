@@ -1,10 +1,13 @@
 package com.shybaiev.expense_tracker_backend.service;
 
+import com.shybaiev.expense_tracker_backend.dto.ExpenseCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.Expense;
 import com.shybaiev.expense_tracker_backend.entity.Role;
 import com.shybaiev.expense_tracker_backend.entity.User;
 import com.shybaiev.expense_tracker_backend.entity.Budget;
+import com.shybaiev.expense_tracker_backend.mapper.ExpenseMapper;
 import com.shybaiev.expense_tracker_backend.repository.ExpenseRepository;
+import com.shybaiev.expense_tracker_backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,40 +33,57 @@ import static org.mockito.Mockito.*;
 public class ExpenseServiceTest {
     @Mock
     private ExpenseRepository expenseRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private ExpenseMapper expenseMapper;
     @InjectMocks
     private ExpenseService expenseService;
 
     private User user;
     private Expense expense;
+    private ExpenseCreateUpdateDto expenseCreateUpdateDto;
 
     @BeforeEach
     void setUp() {
         user = new User();
         user.setId(1L);
         user.setUsername("username");
-        user.setEmail("some@email.com");
+        user.setEmail("email@test.com");
         user.setPasswordHash("somePass");
         user.setRole(Role.USER);
         user.setEnabled(true);
 
         expense = new Expense();
         expense.setUser(user);
-        expense.setAmount(BigDecimal.valueOf(123));
+        expense.setAmount(BigDecimal.valueOf(123.45));
         expense.setCategory("category");
         expense.setDescription("description");
         expense.setPlace("place");
         expense.setSource("source");
         expense.setTimestamp(OffsetDateTime.now());
+
+        expenseCreateUpdateDto = new ExpenseCreateUpdateDto();
+        expenseCreateUpdateDto.setAmount(BigDecimal.valueOf(123.45));
+        expenseCreateUpdateDto.setCategory("category");
+        expenseCreateUpdateDto.setDescription("description");
+        expenseCreateUpdateDto.setPlace("place");
+        expenseCreateUpdateDto.setSource("source");
+        expenseCreateUpdateDto.setTimestamp(OffsetDateTime.now());
+
     }
 
     @Test
-    void testCreateExpense() {
+    void testCreateExpenseForUser() {
         //given
-        //setUp
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseMapper.toEntity(expenseCreateUpdateDto)).thenReturn(expense);
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(i -> i.getArgument(0));
         //when
-        when(expenseRepository.save(expense)).thenReturn(expense);
+        Expense result = expenseService.createExpenseForUser(expenseCreateUpdateDto,"email@test.com");
         //then
-        assertEquals(expense, expenseService.createExpense(expense));
+        assertEquals(new BigDecimal("123.45"), result.getAmount());
+        assertEquals(user, result.getUser());
         verify(expenseRepository).save(expense);
     }
 
@@ -72,6 +92,7 @@ public class ExpenseServiceTest {
         // given
         Long id = 1L;
         when(expenseRepository.findById(id)).thenReturn(Optional.of(expense));
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
 
         // when
         Optional<Expense> result = expenseService.getExpenseById(id);

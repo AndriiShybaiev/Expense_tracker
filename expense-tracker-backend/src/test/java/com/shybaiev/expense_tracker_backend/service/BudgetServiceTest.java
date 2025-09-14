@@ -17,7 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.test.context.support.WithMockUser;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -75,6 +74,7 @@ class BudgetServiceTest {
         existingBudget.setTimePeriod("MONTHLY");
         existingBudget.setStartDate(LocalDate.of(2024, 1, 1));
         existingBudget.setUser(user);
+        user.getBudgets().add(existingBudget);
 
         budgetCreateUpdateDto = new BudgetCreateUpdateDto();
         budgetCreateUpdateDto.setAmount(new BigDecimal("100.00"));
@@ -84,28 +84,27 @@ class BudgetServiceTest {
         budgetCreateUpdateDto.setStartDate(LocalDate.of(2024, 1, 1));
         budgetCreateUpdateDto.setUserId(1L);
 
-
-        user.getBudgets().add(existingBudget);
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testCreateBudgetForUser() {
         // given
-        when(budgetRepository.save(existingBudget)).thenReturn(existingBudget);
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
         when(budgetMapper.toEntity(budgetCreateUpdateDto)).thenReturn(existingBudget);
+        when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // when
-        Budget result = budgetService.createBudgetForUser(budgetCreateUpdateDto,"email@test.com");
+        Budget result = budgetService.createBudgetForUser(budgetCreateUpdateDto, "email@test.com");
 
         // then
-        assertEquals(existingBudget, result);
+        assertEquals(new BigDecimal("100.00"), result.getAmount());
+        assertEquals(user, result.getUser());
+
         verify(budgetRepository).save(existingBudget);
     }
 
+
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetBudgetByIdForUser() {
         // given
         when(budgetRepository.findById(existingBudget.getId())).thenReturn(Optional.of(existingBudget));
@@ -121,7 +120,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testUpdateBudgetSuccess() {
         // given
         BudgetCreateUpdateDto budgetCreateUpdateDtoUpdated = new BudgetCreateUpdateDto();
@@ -150,7 +148,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testUpdateBudgetNotFound() {
         // given
         when(budgetRepository.findById(999L)).thenReturn(Optional.empty());
@@ -164,7 +161,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetBudgetByExpenseForUser_Success() {
         // given
         Expense expense = new Expense();
@@ -191,7 +187,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetBudgetByExpenseForUser_UserNotFound() {
         Expense expense = new Expense();
         expense.setId(1L);
@@ -206,7 +201,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetBudgetByExpenseForUser_BudgetNotFound() {
         Expense expense = new Expense();
         expense.setId(1L);
@@ -226,7 +220,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetBudgetByExpenseForUser_AccessDenied() {
         Expense expense = new Expense();
         expense.setId(1L);
@@ -254,7 +247,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testDeleteBudgetForUser_Success() {
         // given
         User user = new User();
@@ -276,7 +268,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testDeleteBudgetForUser_UserNotFound() {
         // given
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.empty());
@@ -289,7 +280,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testDeleteBudgetForUser_BudgetNotFound() {
         // given
         User user = new User();
@@ -305,7 +295,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testDeleteBudgetForUser_AccessDenied() {
         // given
         User user = new User();
@@ -331,7 +320,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetTotalExpensesForBudgetForUser_Success() {
         // given
         User user = new User();
@@ -355,7 +343,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetTotalExpensesForBudgetForUser_UserNotFound() {
         // given
         Budget budget = new Budget();
@@ -371,7 +358,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testGetTotalExpensesForBudgetForUser_AccessDenied() {
         // given
         User user = new User();
@@ -396,7 +382,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testIsUserOverBudgetInMonthForUser_NoBudgets() {
         // given
         User user = new User();
@@ -414,7 +399,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testIsUserOverBudgetInMonthForUser_NotOver() {
         // given
         User user = new User();
@@ -438,7 +422,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testIsUserOverBudgetInMonthForUser_Over() {
         // given
         User user = new User();
@@ -462,7 +445,6 @@ class BudgetServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "email@test.com")
     void testIsUserOverBudgetInMonthForUser_UserNotFound() {
         // given
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.empty());

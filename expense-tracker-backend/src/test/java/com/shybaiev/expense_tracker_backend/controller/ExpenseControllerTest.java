@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,8 +45,11 @@ class ExpenseControllerTest {
     private ExpenseMapper expenseMapper;
 
     @Test
+    @WithMockUser(username = "testuser@email.com")
     void testAddExpense() throws Exception {
         ExpenseCreateUpdateDto createDto = new ExpenseCreateUpdateDto();
+        createDto.setAmount(new BigDecimal("12.34"));
+        createDto.setDescription("Lunch");
 
         Expense entityToSave = new Expense();
         entityToSave.setAmount(new BigDecimal("12.34"));
@@ -60,8 +65,8 @@ class ExpenseControllerTest {
         responseDto.setAmount(new BigDecimal("12.34"));
         responseDto.setDescription("Lunch");
 
-        when(expenseMapper.toEntity(any(ExpenseCreateUpdateDto.class))).thenReturn(entityToSave);
-        when(expenseService.createExpense(any(Expense.class))).thenReturn(saved);
+        when(expenseService.createExpenseForUser(eq(createDto), eq("testuser@email.com"))).thenReturn(saved);
+
         when(expenseMapper.toDto(saved)).thenReturn(responseDto);
 
         mockMvc.perform(post("/expenses")

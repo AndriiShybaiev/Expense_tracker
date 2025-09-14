@@ -33,13 +33,11 @@ public class BudgetController {
             @RequestBody BudgetCreateUpdateDto dto,
             @AuthenticationPrincipal UserDetails user) {
 
-        String username = user.getUsername();
-        Budget budget = budgetService.createBudgetForUser(dto, username);
+        String email = user.getUsername();
+        Budget budget = budgetService.createBudgetForUser(dto, email);
         BudgetDto response = budgetMapper.toDto(budget);
-
-        return ResponseEntity
-                .created(URI.create("/budgets/" + response.getId()))
-                .body(response);
+        URI location = URI.create("/budgets/" + response.getId());
+        return ResponseEntity.created(location).body(response);
     }
 
     @GetMapping("/{id}")

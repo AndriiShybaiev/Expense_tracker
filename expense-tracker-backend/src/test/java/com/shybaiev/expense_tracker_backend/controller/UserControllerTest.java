@@ -1,6 +1,7 @@
 package com.shybaiev.expense_tracker_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shybaiev.expense_tracker_backend.configuration.SecurityTestConfig;
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
 import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.User;
@@ -13,8 +14,8 @@ import com.shybaiev.expense_tracker_backend.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,8 +31,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(UserController.class)
+@Import(SecurityTestConfig.class)
 class UserControllerTest {
 
     @Autowired
@@ -51,8 +52,6 @@ class UserControllerTest {
 
     @MockitoBean
     private ExpenseMapper expenseMapper;
-
-
 
     private User admin;
     private User user;
@@ -121,7 +120,6 @@ class UserControllerTest {
         assertEquals("newuser@test.com", user.getEmail());
     }
 
-
     @Test
     void testUpdateUserAdmin() throws Exception {
         UserCreateUpdateDto dto = new UserCreateUpdateDto();
@@ -189,5 +187,4 @@ class UserControllerTest {
                         .with(user(new CustomUserDetails(admin))))
                 .andExpect(status().isForbidden());
     }
-
 }

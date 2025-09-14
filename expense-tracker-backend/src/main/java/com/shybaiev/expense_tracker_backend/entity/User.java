@@ -68,10 +68,12 @@ public class User {
     @JsonProperty("expenses")
     @Valid
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Expense> expenses = new ArrayList<>();
 
     @JsonProperty("budgets")
     @Valid
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Budget> budgets = new ArrayList<>();
 }

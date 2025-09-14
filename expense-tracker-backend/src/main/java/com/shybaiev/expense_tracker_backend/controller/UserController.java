@@ -11,6 +11,7 @@ import com.shybaiev.expense_tracker_backend.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +70,7 @@ public class UserController {
 
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')") // ADMIN access only
     public ResponseEntity<List<UserDto>> getAllUsers() {
         List<User> users = userService.getAllUsers();
         List<UserDto> result = new ArrayList<>(users.size());
@@ -77,6 +79,7 @@ public class UserController {
         }
         return ResponseEntity.ok(result);
     }
+
 
     @GetMapping("/{id}/expenses")
     public ResponseEntity<List<ExpenseDto>> getAllExpensesByUser(@AuthenticationPrincipal UserDetails user)

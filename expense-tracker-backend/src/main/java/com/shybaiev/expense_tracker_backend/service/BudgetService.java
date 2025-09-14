@@ -158,9 +158,8 @@ public class BudgetService {
             return false;
         }
 
-        // в MVP максимум один бюджет
         Budget budget = user.getBudgets().getFirst();
-        BigDecimal totalExpenses = expenseService.getTotalExpensesForUserInMonth(user, yearMonth);
+        BigDecimal totalExpenses = expenseService.getTotalExpensesForUserInMonth(userEmail, yearMonth);
 
         return totalExpenses.compareTo(budget.getAmount()) > 0;
     }

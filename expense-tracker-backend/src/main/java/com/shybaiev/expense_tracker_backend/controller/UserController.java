@@ -11,6 +11,8 @@ import com.shybaiev.expense_tracker_backend.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -77,8 +79,10 @@ public class UserController {
     }
 
     @GetMapping("/{id}/expenses")
-    public ResponseEntity<List<ExpenseDto>> getAllExpensesByUser(@PathVariable Long id) {
-        List<Expense> expenses = expenseService.getAllExpensesByUserId(id);
+    public ResponseEntity<List<ExpenseDto>> getAllExpensesByUser(@AuthenticationPrincipal UserDetails user)
+    {
+        String email = user.getUsername();
+        List<Expense> expenses = expenseService.getAllExpensesForUser(email);
         List<ExpenseDto> expenseDtos = new ArrayList<>();
         for (Expense expense : expenses) {
             expenseDtos.add(expenseMapper.toDto(expense));

@@ -9,13 +9,15 @@ import com.shybaiev.expense_tracker_backend.service.ExpenseService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-
 
 @RestController
 @RequestMapping("/expenses")
@@ -35,8 +37,10 @@ public class ExpenseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ExpenseDto> getExpenseById(@PathVariable Long id) {
-        Optional<Expense> maybeExpense = expenseService.getExpenseById(id);
+    public ResponseEntity<ExpenseDto> getExpenseById(@PathVariable Long id,
+                                                     @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        Optional<Expense> maybeExpense = expenseService.getExpenseByIdForUser(id, email);
         if (maybeExpense.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -45,20 +49,54 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteExpenseById(@PathVariable Long id) {
-        expenseService.deleteExpense(id);
-        return ResponseEntity.noContent().build(); // code 204 No Content
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<ExpenseDto> updateExpense(@PathVariable Long id, @RequestBody ExpenseCreateUpdateDto expenseCreateUpdateDto) {
-        Expense expense = expenseMapper.toEntity(expenseCreateUpdateDto);
+    public ResponseEntity<Void> deleteExpenseById(@PathVariable Long id,
+                                                  @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
         try {
-            Expense updated = expenseService.updateExpense(id, expense);
-            return ResponseEntity.ok(expenseMapper.toDto(updated));
+            expenseService.deleteExpenseForUser(id, email);
+            return ResponseEntity.noContent().build(); // code 204 No Content
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(403).build(); // 403 Forbidden
         }
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<ExpenseDto> updateExpense(@PathVariable Long id, 
+                                                    @RequestBody ExpenseCreateUpdateDto expenseCreateUpdateDto,
+                                                    @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        try {
+            Expense updated = expenseService.updateExpenseForUser(id, expenseCreateUpdateDto, email);
+            return ResponseEntity.ok(expenseMapper.toDto(updated));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(403).build(); // 403 Forbidden
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ExpenseDto>> getAllExpenses(@AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        List<Expense> expenses = expenseService.getAllExpensesForUser(email);
+        List<ExpenseDto> result = new ArrayList<>(expenses.size());
+        for (Expense expense : expenses) {
+            result.add(expenseMapper.toDto(expense));
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<ExpenseDto>> getExpensesByCategory(@PathVariable String category,
+                                                                  @AuthenticationPrincipal UserDetails user) {
+        String email = user.getUsername();
+        List<Expense> expenses = expenseService.getExpensesByCategoryForUser(category, email);
+        List<ExpenseDto> result = new ArrayList<>(expenses.size());
+        for (Expense expense : expenses) {
+            result.add(expenseMapper.toDto(expense));
+        }
+        return ResponseEntity.ok(result);
+    }
 }

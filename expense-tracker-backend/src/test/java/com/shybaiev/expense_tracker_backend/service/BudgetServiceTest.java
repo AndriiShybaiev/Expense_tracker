@@ -410,7 +410,7 @@ class BudgetServiceTest {
         user.setBudgets(new ArrayList<>(List.of(budget)));
 
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
-        when(expenseService.getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2)))
+        when(expenseService.getTotalExpensesForUserInMonth(user.getEmail(), YearMonth.of(2024, 2)))
                 .thenReturn(new BigDecimal("99.99"));
 
         // when
@@ -418,7 +418,7 @@ class BudgetServiceTest {
 
         // then
         assertFalse(result);
-        verify(expenseService).getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2));
+        verify(expenseService).getTotalExpensesForUserInMonth(user.getEmail(), YearMonth.of(2024, 2));
     }
 
     @Test
@@ -433,7 +433,7 @@ class BudgetServiceTest {
         user.setBudgets(new ArrayList<>(List.of(budget)));
 
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
-        when(expenseService.getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2)))
+        when(expenseService.getTotalExpensesForUserInMonth(user.getEmail(), YearMonth.of(2024, 2)))
                 .thenReturn(new BigDecimal("150.00"));
 
         // when
@@ -441,7 +441,7 @@ class BudgetServiceTest {
 
         // then
         assertTrue(result);
-        verify(expenseService).getTotalExpensesForUserInMonth(user, YearMonth.of(2024, 2));
+        verify(expenseService).getTotalExpensesForUserInMonth(user.getEmail(), YearMonth.of(2024, 2));
     }
 
     @Test

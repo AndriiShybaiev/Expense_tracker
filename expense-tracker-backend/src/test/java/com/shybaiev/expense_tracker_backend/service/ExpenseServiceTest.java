@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -41,6 +42,7 @@ public class ExpenseServiceTest {
     private ExpenseService expenseService;
 
     private User user;
+    private User otherUser;
     private Expense expense;
     private ExpenseCreateUpdateDto expenseCreateUpdateDto;
 
@@ -54,7 +56,16 @@ public class ExpenseServiceTest {
         user.setRole(Role.USER);
         user.setEnabled(true);
 
+        otherUser = new User();
+        otherUser.setId(2L);
+        otherUser.setUsername("other");
+        otherUser.setEmail("other@test.com");
+        otherUser.setPasswordHash("pass");
+        otherUser.setRole(Role.USER);
+        otherUser.setEnabled(true);
+
         expense = new Expense();
+        expense.setId(1L);
         expense.setUser(user);
         expense.setAmount(BigDecimal.valueOf(123.45));
         expense.setCategory("category");
@@ -70,44 +81,98 @@ public class ExpenseServiceTest {
         expenseCreateUpdateDto.setPlace("place");
         expenseCreateUpdateDto.setSource("source");
         expenseCreateUpdateDto.setTimestamp(OffsetDateTime.now());
-
     }
 
     @Test
     void testCreateExpenseForUser() {
-        //given
+        // given
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
         when(expenseMapper.toEntity(expenseCreateUpdateDto)).thenReturn(expense);
         when(expenseRepository.save(any(Expense.class))).thenAnswer(i -> i.getArgument(0));
-        //when
-        Expense result = expenseService.createExpenseForUser(expenseCreateUpdateDto,"email@test.com");
-        //then
+
+        // when
+        Expense result = expenseService.createExpenseForUser(expenseCreateUpdateDto, "email@test.com");
+
+        // then
         assertEquals(new BigDecimal("123.45"), result.getAmount());
         assertEquals(user, result.getUser());
         verify(expenseRepository).save(expense);
     }
 
     @Test
-    void testGetExpenseById() {
+    void testCreateExpenseForUser_UserNotFound() {
         // given
-        Long id = 1L;
-        when(expenseRepository.findById(id)).thenReturn(Optional.of(expense));
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(IllegalArgumentException.class,
+                () -> expenseService.createExpenseForUser(expenseCreateUpdateDto, "nonexistent@test.com"));
+
+        verify(userRepository).findByEmail("nonexistent@test.com");
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    void testGetExpenseByIdForUser() {
+        // given
         when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
 
         // when
-        Optional<Expense> result = expenseService.getExpenseById(id);
+        Optional<Expense> result = expenseService.getExpenseByIdForUser(1L, "email@test.com");
 
         // then
         assertTrue(result.isPresent());
         assertEquals(expense, result.get());
-        verify(expenseRepository).findById(id);
+        verify(expenseRepository).findById(1L);
     }
 
     @Test
-    void testUpdateExpenseSuccess() {
+    void testGetExpenseByIdForUser_ExpenseNotFound() {
         // given
-        Long id = 1L;
-        Expense updated = new Expense();
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(404L)).thenReturn(Optional.empty());
+
+        // when
+        Optional<Expense> result = expenseService.getExpenseByIdForUser(404L, "email@test.com");
+
+        // then
+        assertFalse(result.isPresent());
+        verify(expenseRepository).findById(404L);
+    }
+
+    @Test
+    void testGetExpenseByIdForUser_UserNotFound() {
+        // given
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> expenseService.getExpenseByIdForUser(1L, "nonexistent@test.com"));
+
+        verify(userRepository).findByEmail("nonexistent@test.com");
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    void testGetExpenseByIdForUser_ExpenseNotBelongsToUser() {
+        // given
+        expense.setUser(otherUser);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+
+        // when
+        Optional<Expense> result = expenseService.getExpenseByIdForUser(1L, "email@test.com");
+
+        // then
+        assertFalse(result.isPresent());
+        verify(expenseRepository).findById(1L);
+    }
+
+    @Test
+    void testUpdateExpenseForUser_Success() {
+        // given
+        ExpenseCreateUpdateDto updated = new ExpenseCreateUpdateDto();
         updated.setAmount(BigDecimal.valueOf(200));
         updated.setDescription("new desc");
         updated.setPlace("new place");
@@ -115,11 +180,12 @@ public class ExpenseServiceTest {
         updated.setSource("new source");
         updated.setTimestamp(OffsetDateTime.now().minusDays(1));
 
-        when(expenseRepository.findById(id)).thenReturn(Optional.of(expense));
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // when
-        Expense result = expenseService.updateExpense(id, updated);
+        Expense result = expenseService.updateExpenseForUser(1L, updated, "email@test.com");
 
         // then
         assertEquals(BigDecimal.valueOf(200), result.getAmount());
@@ -129,26 +195,54 @@ public class ExpenseServiceTest {
         assertEquals("new source", result.getSource());
         assertEquals(updated.getTimestamp(), result.getTimestamp());
 
-        verify(expenseRepository).findById(id);
+        verify(expenseRepository).findById(1L);
         verify(expenseRepository).save(expense);
     }
 
     @Test
-    void testUpdateExpenseNotFound() {
+    void testUpdateExpenseForUser_ExpenseNotFound() {
         // given
-        Long missingId = 999L;
-        when(expenseRepository.findById(missingId)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(999L)).thenReturn(Optional.empty());
 
         // when + then
         assertThrows(EntityNotFoundException.class,
-                () -> expenseService.updateExpense(missingId, new Expense()));
+                () -> expenseService.updateExpenseForUser(999L, new ExpenseCreateUpdateDto(), "email@test.com"));
 
-        verify(expenseRepository).findById(missingId);
+        verify(expenseRepository).findById(999L);
         verify(expenseRepository, never()).save(any());
     }
 
     @Test
-    void testGetAllExpenses() {
+    void testUpdateExpenseForUser_UserNotFound() {
+        // given
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> expenseService.updateExpenseForUser(1L, new ExpenseCreateUpdateDto(), "nonexistent@test.com"));
+
+        verify(userRepository).findByEmail("nonexistent@test.com");
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    void testUpdateExpenseForUser_AccessDenied() {
+        // given
+        expense.setUser(otherUser);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+
+        // when + then
+        assertThrows(AccessDeniedException.class,
+                () -> expenseService.updateExpenseForUser(1L, new ExpenseCreateUpdateDto(), "email@test.com"));
+
+        verify(expenseRepository).findById(1L);
+        verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
+    void testGetAllExpensesForUser() {
         // given
         Expense e1 = new Expense();
         e1.setUser(user);
@@ -160,65 +254,44 @@ public class ExpenseServiceTest {
         e2.setAmount(BigDecimal.ONE);
         e2.setTimestamp(OffsetDateTime.now());
 
-        when(expenseRepository.findAll()).thenReturn(List.of(e1, e2));
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findAllByUser(user)).thenReturn(List.of(e1, e2));
 
         // when
-        List<Expense> result = expenseService.getAllExpenses();
+        List<Expense> result = expenseService.getAllExpensesForUser("email@test.com");
 
         // then
         assertEquals(2, result.size());
         assertTrue(result.containsAll(List.of(e1, e2)));
-        verify(expenseRepository).findAll();
-    }
-
-    @Test
-    void testGetAllExpensesByUser() {
-        // given
-        Expense e1 = new Expense();
-        e1.setUser(user);
-        Expense e2 = new Expense();
-        e2.setUser(user);
-
-        when(expenseRepository.findAllByUser(user)).thenReturn(List.of(e1, e2));
-
-        // when
-        List<Expense> result = expenseService.getAllExpensesByUser(user);
-
-        // then
-        assertEquals(2, result.size());
         verify(expenseRepository).findAllByUser(user);
     }
 
     @Test
-    void testGetAllExpensesByBudget() {
+    void testGetAllExpensesForUser_UserNotFound() {
         // given
-        Budget budget = new Budget();
-        Expense e1 = new Expense();
-        e1.setUser(user);
-        Expense e2 = new Expense();
-        e2.setUser(user);
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
 
-        when(expenseRepository.findAllByBudget(budget)).thenReturn(List.of(e1, e2));
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> expenseService.getAllExpensesForUser("nonexistent@test.com"));
 
-        // when
-        List<Expense> result = expenseService.getAllExpensesByBudget(budget);
-
-        // then
-        assertEquals(2, result.size());
-        verify(expenseRepository).findAllByBudget(budget);
+        verify(userRepository).findByEmail("nonexistent@test.com");
+        verifyNoInteractions(expenseRepository);
     }
 
     @Test
-    void testGetExpensesByCategoryAndUser() {
+    void testGetExpensesByCategoryForUser() {
         // given
         String category = "food";
         Expense e1 = new Expense();
         e1.setCategory(category);
         e1.setUser(user);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
         when(expenseRepository.findAllByCategoryAndUser(category, user)).thenReturn(List.of(e1));
 
         // when
-        List<Expense> result = expenseService.getExpensesByCategoryAndUser(category, user);
+        List<Expense> result = expenseService.getExpensesByCategoryForUser(category, "email@test.com");
 
         // then
         assertEquals(1, result.size());
@@ -227,17 +300,19 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    void testGetExpensesByDateRangeAndUser() {
+    void testGetExpensesByDateRangeForUser() {
         // given
         OffsetDateTime from = OffsetDateTime.now().minusDays(7).withOffsetSameInstant(ZoneOffset.UTC);
         OffsetDateTime to = OffsetDateTime.now().withOffsetSameInstant(ZoneOffset.UTC);
         Expense e1 = new Expense();
         e1.setUser(user);
         e1.setTimestamp(from.plusDays(1));
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
         when(expenseRepository.findAllByTimestampBetweenAndUser(from, to, user)).thenReturn(List.of(e1));
 
         // when
-        List<Expense> result = expenseService.getExpensesByDateRangeAndUser(from, to, user);
+        List<Expense> result = expenseService.getExpensesByDateRangeForUser(from, to, "email@test.com");
 
         // then
         assertEquals(1, result.size());
@@ -245,28 +320,58 @@ public class ExpenseServiceTest {
     }
 
     @Test
-    void testDeleteExpenseSuccess() {
+    void testDeleteExpenseForUser_Success() {
         // given
-        Long id = 1L;
-        when(expenseRepository.existsById(id)).thenReturn(true);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
 
         // when
-        expenseService.deleteExpense(id);
+        expenseService.deleteExpenseForUser(1L, "email@test.com");
 
         // then
-        verify(expenseRepository).existsById(id);
-        verify(expenseRepository).deleteById(id);
+        verify(expenseRepository).findById(1L);
+        verify(expenseRepository).deleteById(1L);
     }
 
     @Test
-    void testDeleteExpenseNotFound() {
+    void testDeleteExpenseForUser_ExpenseNotFound() {
         // given
-        Long id = 999L;
-        when(expenseRepository.existsById(id)).thenReturn(false);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(999L)).thenReturn(Optional.empty());
 
         // when + then
-        assertThrows(EntityNotFoundException.class, () -> expenseService.deleteExpense(id));
-        verify(expenseRepository).existsById(id);
+        assertThrows(EntityNotFoundException.class,
+                () -> expenseService.deleteExpenseForUser(999L, "email@test.com"));
+
+        verify(expenseRepository).findById(999L);
+        verify(expenseRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void testDeleteExpenseForUser_UserNotFound() {
+        // given
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> expenseService.deleteExpenseForUser(1L, "nonexistent@test.com"));
+
+        verify(userRepository).findByEmail("nonexistent@test.com");
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    void testDeleteExpenseForUser_AccessDenied() {
+        // given
+        expense.setUser(otherUser);
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findById(1L)).thenReturn(Optional.of(expense));
+
+        // when + then
+        assertThrows(AccessDeniedException.class,
+                () -> expenseService.deleteExpenseForUser(1L, "email@test.com"));
+
+        verify(expenseRepository).findById(1L);
         verify(expenseRepository, never()).deleteById(anyLong());
     }
 
@@ -289,11 +394,12 @@ public class ExpenseServiceTest {
         ArgumentCaptor<OffsetDateTime> startCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
         ArgumentCaptor<OffsetDateTime> endCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
 
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
         when(expenseRepository.findAllByTimestampBetweenAndUser(any(OffsetDateTime.class), any(OffsetDateTime.class), eq(user)))
                 .thenReturn(List.of(e1, e2, e3));
 
         // when
-        BigDecimal total = expenseService.getTotalExpensesForUserInMonth(user, ym);
+        BigDecimal total = expenseService.getTotalExpensesForUserInMonth("email@test.com", ym);
 
         // then
         assertEquals(new BigDecimal("15.75"), total);
@@ -314,5 +420,55 @@ public class ExpenseServiceTest {
         assertEquals(59, end.getMinute());
         assertEquals(59, end.getSecond());
         assertEquals(ZoneOffset.UTC, end.getOffset());
+    }
+
+    @Test
+    void testGetTotalExpensesForUserInMonth_UserNotFound() {
+        // given
+        when(userRepository.findByEmail("nonexistent@test.com")).thenReturn(Optional.empty());
+
+        // when + then
+        assertThrows(EntityNotFoundException.class,
+                () -> expenseService.getTotalExpensesForUserInMonth("nonexistent@test.com", YearMonth.of(2024, 1)));
+
+        verify(userRepository).findByEmail("nonexistent@test.com");
+        verifyNoInteractions(expenseRepository);
+    }
+
+    @Test
+    void testGetAllExpensesByBudgetForUser_Success() {
+        // given
+        Budget budget = new Budget();
+        budget.setUser(user);
+        Expense e1 = new Expense();
+        e1.setUser(user);
+        Expense e2 = new Expense();
+        e2.setUser(user);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+        when(expenseRepository.findAllByBudget(budget)).thenReturn(List.of(e1, e2));
+
+        // when
+        List<Expense> result = expenseService.getAllExpensesByBudgetForUser(budget, "email@test.com");
+
+        // then
+        assertEquals(2, result.size());
+        verify(expenseRepository).findAllByBudget(budget);
+    }
+
+    @Test
+    void testGetAllExpensesByBudgetForUser_AccessDenied() {
+        // given
+        Budget budget = new Budget();
+        budget.setUser(otherUser);
+
+        when(userRepository.findByEmail("email@test.com")).thenReturn(Optional.of(user));
+
+        // when + then
+        assertThrows(AccessDeniedException.class,
+                () -> expenseService.getAllExpensesByBudgetForUser(budget, "email@test.com"));
+
+        verify(userRepository).findByEmail("email@test.com");
+        verifyNoInteractions(expenseRepository);
     }
 }

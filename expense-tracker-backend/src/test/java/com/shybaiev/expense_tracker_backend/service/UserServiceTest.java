@@ -2,6 +2,7 @@ package com.shybaiev.expense_tracker_backend.service;
 
 import com.shybaiev.expense_tracker_backend.entity.Role;
 import com.shybaiev.expense_tracker_backend.entity.User;
+import com.shybaiev.expense_tracker_backend.mapper.UserMapper;
 import com.shybaiev.expense_tracker_backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +24,10 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
 
     @InjectMocks
     private UserService userService;

@@ -24,6 +24,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public User createUser(User user) {
+        if (user.getPasswordHash() != null && !user.getPasswordHash().isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        } else {
+            throw new IllegalArgumentException("Password must not be empty");
+        }
+
+        if (user.getRole() == null) {
+            user.setRole(Role.USER);
+        }
+
         return userRepository.save(user);
     }
 

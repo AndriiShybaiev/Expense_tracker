@@ -1,6 +1,7 @@
 package com.shybaiev.expense_tracker_backend.security;
 
 import com.shybaiev.expense_tracker_backend.entity.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -22,6 +23,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(user.getEmail())
                 .claim("role", user.getRole())
+                .claim("userId", user.getId()) // Add user ID to JWT claims
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
                 .signWith(key)
@@ -37,6 +39,16 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
+
+    public Long extractUserId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("userId", Long.class);
+    }
+
 
     public boolean validateToken(String token, UserDetails userDetails) {
         try {

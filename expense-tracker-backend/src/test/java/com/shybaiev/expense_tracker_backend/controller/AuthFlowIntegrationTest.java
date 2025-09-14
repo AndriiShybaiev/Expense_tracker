@@ -14,7 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -74,11 +75,12 @@ class AuthFlowIntegrationTest {
 
         assertThat(token).isNotBlank();
 
-        // 3. Access protected endpoint with token
+        // 3. Access protected endpoint with token using real JWT and CustomUserDetails
         mockMvc.perform(get("/users/" + saved.getId())
-                        .header("Authorization", "Bearer " + token))
+                        .header("Authorization", "Bearer " + token)
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("jwtuser@email.com"))
-                .andExpect(jsonPath("$.username").value("jwtuser"));
+                .andExpect(jsonPath("$.email").value(saved.getEmail()))
+                .andExpect(jsonPath("$.username").value(saved.getUsername()));
     }
 }

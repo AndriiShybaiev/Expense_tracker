@@ -27,3 +27,42 @@ A full-stack application for tracking personal expenses.
 ```bash
 # build and start all containers
 docker-compose up --build
+```
+## 🗂️ Database ER Diagram (MVP)
+
+```mermaid
+erDiagram
+    USER {
+        int id PK
+        string username
+        string email
+        string password_hash
+        boolean enabled
+    }
+
+    BUDGET {
+        int id PK
+        float amount
+        string name
+        string description
+        string time_period
+        date start_date
+        int user_id FK
+    }
+
+    EXPENSE {
+        int id PK
+        float amount
+        string description
+        string place
+        datetime timestamp
+        int user_id FK
+        int budget_id FK
+    }
+
+    USER ||--o{ BUDGET : owns
+    USER ||--o{ EXPENSE : creates
+    BUDGET ||--o{ EXPENSE : includes
+```
+
+

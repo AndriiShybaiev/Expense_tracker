@@ -9,7 +9,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
   templateUrl: './login.html',
   styleUrls: ['./login.scss']
 })
-export class LoginComponent {
+export class Login {
   form: FormGroup;
 
   constructor(private fb: FormBuilder) {

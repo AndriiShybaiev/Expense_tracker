@@ -1,1 +1,20 @@
-<p>login works!</p>
+<h2>Login</h2>
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <label>
+    Email:
+    <input type="email" formControlName="email">
+  </label>
+  @if (form.get('email')?.invalid && form.get('email')?.touched) {
+    <div>Email is required</div>
+  }
+
+  <label>
+    Password:
+    <input type="password" formControlName="password">
+  </label>
+  @if (form.get('password')?.invalid && form.get('password')?.touched) {
+    <div>Password is required</div>
+  }
+
+  <button type="submit" [disabled]="form.invalid">Login</button>
+</form>

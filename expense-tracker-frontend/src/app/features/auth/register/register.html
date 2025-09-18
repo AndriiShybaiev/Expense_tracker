@@ -1,1 +1,31 @@
-<p>register works!</p>
+<h2>Register</h2>
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <label>
+    Email:
+    <input type="email" formControlName="email">
+  </label>
+  @if (form.get('email')?.invalid && form.get('email')?.touched) {
+    <div>Valid email is required</div>
+  }
+
+  <label>
+    Password:
+    <input type="password" formControlName="password">
+  </label>
+  @if (form.get('password')?.invalid && form.get('password')?.touched) {
+    <div>Password is required (min 6 chars)</div>
+  }
+
+  <label>
+    Confirm Password:
+    <input type="password" formControlName="confirmPassword">
+  </label>
+  @if (form.get('confirmPassword')?.invalid && form.get('confirmPassword')?.touched) {
+    <div>Please confirm your password</div>
+  }
+  @if (form.errors?.['mismatch'] && form.get('confirmPassword')?.touched) {
+    <div>Passwords do not match</div>
+  }
+
+  <button type="submit" [disabled]="form.invalid">Register</button>
+</form>

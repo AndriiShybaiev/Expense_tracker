@@ -6,39 +6,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
   selector: 'app-register',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <h2>Register</h2>
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <label>
-        Email:
-        <input type="email" formControlName="email">
-      </label>
-      <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
-        Valid email is required
-      </div>
-
-      <label>
-        Password:
-        <input type="password" formControlName="password">
-      </label>
-      <div *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-        Password is required (min 6 chars)
-      </div>
-
-      <label>
-        Confirm Password:
-        <input type="password" formControlName="confirmPassword">
-      </label>
-      <div *ngIf="form.get('confirmPassword')?.invalid && form.get('confirmPassword')?.touched">
-        Please confirm your password
-      </div>
-      <div *ngIf="form.errors?.['mismatch'] && form.get('confirmPassword')?.touched">
-        Passwords do not match
-      </div>
-
-      <button type="submit" [disabled]="form.invalid">Register</button>
-    </form>
-  `,
+  templateUrl: './register.html',
+  styleUrls: ['./register.scss']
 })
 export class RegisterComponent {
   form: FormGroup;
@@ -62,8 +31,8 @@ export class RegisterComponent {
 
   onSubmit() {
     if (this.form.valid) {
-      console.log('Register Value:', this.form.value);
-      // здесь можно вызвать AuthService.register(...)
+      console.log('Register form value:', this.form.value);
+      // тут можно вызвать AuthService.register(...)
     }
   }
 }

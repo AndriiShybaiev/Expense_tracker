@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {AuthService} from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -12,7 +13,10 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 export class Login {
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService
+  ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
@@ -21,8 +25,16 @@ export class Login {
 
   onSubmit() {
     if (this.form.valid) {
-      console.log('Login form value:', this.form.value);
-      // тут можно вызвать AuthService.login(...)
+      this.authService.login(this.form.value).subscribe({
+        next: () => {
+          console.log('Login success');
+          // todo later:
+          // this.router.navigate(['/dashboard']);
+        },
+        error: (err) => {
+          console.error('Login failed:', err);
+        }
+      });
     }
   }
 }

@@ -23,7 +23,7 @@ export interface AuthResponse {
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:8080/auth';
+  private apiUrl = 'http://localhost:8080';
   private tokenKey = 'authToken';
   constructor(private http: HttpClient) {}
 

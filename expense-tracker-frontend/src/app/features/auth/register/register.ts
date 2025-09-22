@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -12,10 +13,14 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 export class Register {
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private authService: AuthService
+  ) {
     this.form = this.fb.group(
       {
         email: ['', [Validators.required, Validators.email]],
+        username: ['', [Validators.required, Validators.minLength(3)]],
         password: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', Validators.required],
       },
@@ -30,9 +35,19 @@ export class Register {
   }
 
   onSubmit() {
+    this.form.updateValueAndValidity();
     if (this.form.valid) {
-      console.log('Register form value:', this.form.value);
-      // тут можно вызвать AuthService.register(...)
+      const { email, username, password } = this.form.value;
+      this.authService.register({ email, username, password }).subscribe({
+        next: () => {
+          console.log('Registration success');
+          // todo later:
+          // this.router.navigate(['/dashboard']);
+        },
+        error: (err) => {
+          console.error('Registration failed:', err);
+        }
+      });
     }
   }
 }

@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {Observable, tap} from 'rxjs';
-
+import { Observable, tap } from 'rxjs';
 
 export interface RegisterRequest {
   email: string;
+  username: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface LoginRequest {
@@ -16,7 +16,8 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
-  token: string; // JWT
+  token: string;   // JWT
+  username?: string;  // todo implement in back
 }
 
 @Injectable({
@@ -25,36 +26,44 @@ export interface AuthResponse {
 export class AuthService {
   private apiUrl = 'http://localhost:8080';
   private tokenKey = 'authToken';
+  private usernameKey = 'username';
+
   constructor(private http: HttpClient) {}
 
-
-  login(credentials: { email: string; password: string }): Observable<AuthResponse> {
+  login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
-      tap((response: AuthResponse) => {
-        localStorage.setItem(this.tokenKey, response.token);
-      })
+      tap((res: AuthResponse) => this.handleAuthSuccess(res))
     );
   }
 
-  register(data: { email: string; username: string; password: string }): Observable<AuthResponse> {
+  register(data: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data).pipe(
-      tap((response: AuthResponse) => {
-        localStorage.setItem(this.tokenKey, response.token);
-      })
+      tap((res: AuthResponse) => this.handleAuthSuccess(res))
     );
   }
-
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.usernameKey);
   }
 
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
 
+  getUsername(): string | null {
+    return localStorage.getItem(this.usernameKey);
+  }
+
   isAuthenticated(): boolean {
     return !!this.getToken();
   }
 
+  /** private helper */
+  private handleAuthSuccess(res: AuthResponse): void {
+    localStorage.setItem(this.tokenKey, res.token);
+    if (res.username) {
+      localStorage.setItem(this.usernameKey, res.username);
+    }
+  }
 }

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { Landing } from './landing/landing';
 
 export const routes: Routes = [
   {
@@ -8,8 +9,7 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: 'auth/login',
-    pathMatch: 'full',
+    component: Landing
   },
   {
     path: '**',

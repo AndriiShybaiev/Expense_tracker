@@ -31,13 +31,13 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/login`, credentials).pipe(
       tap((res: AuthResponse) => this.handleAuthSuccess(res))
     );
   }
 
   register(data: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/register`, data).pipe(
       tap((res: AuthResponse) => this.handleAuthSuccess(res))
     );
   }

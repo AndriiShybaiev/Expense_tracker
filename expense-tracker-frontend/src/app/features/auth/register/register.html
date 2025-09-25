@@ -9,6 +9,14 @@
   }
 
   <label>
+    username:
+    <input type="text" formControlName="username">
+  </label>
+  @if (form.get('username')?.invalid && form.get('username')?.touched) {
+    <div>Valid username is required</div>
+  }
+
+  <label>
     Password:
     <input type="password" formControlName="password">
   </label>

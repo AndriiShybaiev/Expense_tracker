@@ -20,7 +20,7 @@ services:
       retries: 20
 
   backend:
-    image: your_dockerhub_username/expense-tracker-backend:staging
+    image: ashybaiev/expense-tracker-backend:staging
     container_name: expense-tracker-backend-staging
     restart: always
     environment:
@@ -29,6 +29,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: expense_pass
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
+    volumes:
+      - ./jwt.properties:/app/jwt.properties:ro
     ports:
       - "8080:8080"
     depends_on:
@@ -37,12 +39,13 @@ services:
 
   frontend:
     image: your_dockerhub_username/expense-tracker-frontend:staging
-    container_name: expense-tracker-frontend-staging
     restart: always
     ports:
       - "4200:80"
     depends_on:
       - backend
+    volumes:
+      - ./nginx.conf.staging:/etc/nginx/conf.d/nginx.conf:ro
 
 volumes:
   pg_data:

@@ -4,6 +4,9 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+## JWT ##
+/src/main/resources/jwt.properties
+
 ### STS ###
 .apt_generated
 .classpath

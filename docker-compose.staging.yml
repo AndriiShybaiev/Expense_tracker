@@ -38,7 +38,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: your_dockerhub_username/expense-tracker-frontend:staging
+    image: ashybaiev/expense-tracker-frontend:staging
     restart: always
     ports:
       - "4200:80"

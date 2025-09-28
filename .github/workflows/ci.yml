@@ -60,10 +60,7 @@ jobs:
 
       - name: Build and push backend image (staging)
         run: |
-          docker build \
-            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            --build-arg JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker-backend:staging ./expense-tracker-backend
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker-backend:staging ./expense-tracker-backend
           docker push ${{ secrets.DOCKER_USERNAME }}/expense-tracker-backend:staging
 
       - name: Build and push frontend image (staging)
@@ -87,10 +84,7 @@ jobs:
 
       - name: Build and push backend image (prod)
         run: |
-          docker build \
-            --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            --build-arg JWT_EXPIRATION=${{ secrets.JWT_EXPIRATION }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker-backend:latest ./expense-tracker-backend
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/expense-tracker-backend:latest ./expense-tracker-backend
           docker push ${{ secrets.DOCKER_USERNAME }}/expense-tracker-backend:latest
 
       - name: Build and push frontend image (prod)

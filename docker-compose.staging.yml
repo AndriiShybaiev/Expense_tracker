@@ -29,8 +29,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: expense_pass
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
-    volumes:
-      - ./jwt.properties:/app/jwt.properties:ro
     ports:
       - "8080:8080"
     depends_on:

@@ -1,7 +1,9 @@
+version: "3.9"
+
 services:
   postgres:
     image: postgres:16
-    container_name: expense-tracker-postgres
+    container_name: expense-tracker-postgres-staging
     restart: always
     environment:
       POSTGRES_DB: expense_db
@@ -18,8 +20,8 @@ services:
       retries: 20
 
   backend:
-    build: ./expense-tracker-backend
-    container_name: expense-tracker-backend
+    image: ashybaiev/expense-tracker-backend:staging
+    container_name: expense-tracker-backend-staging
     restart: always
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/expense_db
@@ -34,13 +36,14 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./expense-tracker-frontend
-    container_name: expense-tracker-frontend
+    image: ashybaiev/expense-tracker-frontend:staging
     restart: always
     ports:
       - "4200:80"
     depends_on:
       - backend
+    volumes:
+      - ./expense-tracker-frontend/nginx.conf.staging:/etc/nginx/conf.d/nginx.conf:ro
 
 volumes:
   pg_data:

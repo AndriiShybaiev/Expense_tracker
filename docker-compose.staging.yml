@@ -43,7 +43,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./nginx.conf.staging:/etc/nginx/conf.d/nginx.conf:ro
+      - ./expense-tracker-frontend/nginx.conf.staging:/etc/nginx/conf.d/nginx.conf:ro
 
 volumes:
   pg_data:

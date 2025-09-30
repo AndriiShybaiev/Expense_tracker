@@ -26,7 +26,7 @@ A full-stack application for tracking personal expenses.
 
 ```bash
 # build and start all containers
-docker-compose up --build
+docker-compose --env-file .env.example up
 ```
 ## 🗂️ Database ER Diagram (MVP)
 

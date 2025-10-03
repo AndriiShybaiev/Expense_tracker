@@ -1,1 +1,18 @@
-<p>profile works!</p>
+<h2>Профиль</h2>
+
+<form [formGroup]="form" (ngSubmit)="onSave()">
+  <label>Username</label>
+  <input formControlName="username">
+
+  <label>Email</label>
+  <input formControlName="email">
+
+  <label>Password</label>
+  <input type="password" formControlName="password">
+
+  <button type="submit" [disabled]="form.invalid">Save</button>
+</form>
+
+<hr>
+
+<button (click)="onDelete()" class="danger">Delete Account</button>

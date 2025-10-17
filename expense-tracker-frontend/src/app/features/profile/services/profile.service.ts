@@ -13,7 +13,7 @@ export class ProfileService {
   constructor(private http: HttpClient) {}
 
   getProfile(): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/profile`);
+    return this.http.get<User>(`${this.apiUrl}/me`);
   }
 
   patchProfile(updates: Partial<User>): Observable<User> {

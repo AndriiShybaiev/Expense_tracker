@@ -150,4 +150,15 @@ public class UserController {
 
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        Optional<User> maybeUser = userService.getUserByEmail(userDetails.getUsername());
+        if (maybeUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(userMapper.toDto(maybeUser.get()));
+    }
+
 }

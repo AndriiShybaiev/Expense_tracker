@@ -15,6 +15,11 @@ export class Dashboard {
     this.username = this.authService.getUsername() ?? 'User';
   }
 
+  goToProfile() {
+    this.router.navigate(['/profile']);
+  }
+
+
   logout() {
     this.authService.logout();
     this.router.navigate(['/']);

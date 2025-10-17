@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Landing } from './landing/landing';
 import {Dashboard} from './dashboard/dashboard';
+import {Profile} from '@features/profile/profile';
 
 export const routes: Routes = [
   {
@@ -17,7 +18,11 @@ export const routes: Routes = [
     component: Dashboard
   },
   {
+    path: 'profile',
+    component: Profile
+  },
+  {
     path: '**',
     redirectTo: 'auth/login',
-  },
+  }
 ];

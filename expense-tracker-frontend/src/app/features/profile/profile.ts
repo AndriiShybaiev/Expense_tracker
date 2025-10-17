@@ -21,15 +21,22 @@ export class Profile implements OnInit {
     private profileService: ProfileService,
     private auth: AuthService,
     private router: Router
-  ) {}
+  ) {
+    this.form = this.fb.group({
+      username: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['']
+    });
+  }
 
   ngOnInit() {
     this.profileService.getProfile().subscribe(user => {
       this.user = user;
-      this.form = this.fb.group({
-        username: [user.username, Validators.required],
-        email: [user.email, [Validators.required, Validators.email]],
-        password: ['']
+      // Updating empty default form values with actual user data
+      this.form.patchValue({
+        username: user.username,
+        email: user.email,
+        password: ''
       });
     });
   }

@@ -1,5 +1,6 @@
 package com.shybaiev.expense_tracker_backend.controller;
 import com.shybaiev.expense_tracker_backend.dto.ExpenseDto;
+import com.shybaiev.expense_tracker_backend.dto.PasswordChangeDto;
 import com.shybaiev.expense_tracker_backend.dto.UserDto;
 import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.entity.Expense;
@@ -9,6 +10,7 @@ import com.shybaiev.expense_tracker_backend.mapper.UserMapper;
 import com.shybaiev.expense_tracker_backend.service.ExpenseService;
 import com.shybaiev.expense_tracker_backend.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -167,6 +169,22 @@ public class UserController {
         User updatedUser = userService.updateUserForUser(userDetails.getUsername(), userCreateUpdateDto);
         return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }
+
+    @PatchMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> changePassword(
+            @Valid @RequestBody PasswordChangeDto passwordChangeDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        userService.changePasswordForUser(
+                userDetails.getUsername(),
+                passwordChangeDto.getOldPassword(),
+                passwordChangeDto.getNewPassword()
+        );
+
+        return ResponseEntity.noContent().build(); // 204 No Content
+    }
+
 
 
 }

@@ -118,5 +118,22 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public void changePasswordForUser(String email, String oldPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Old password is incorrect");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("New password must be different from the old one");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+
+        userRepository.save(user);
+    }
+
 
 }

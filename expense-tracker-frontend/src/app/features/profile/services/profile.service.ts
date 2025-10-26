@@ -17,7 +17,7 @@ export class ProfileService {
   }
 
   patchProfile(updates: Partial<User>): Observable<User> {
-    return this.http.patch<User>(`${this.apiUrl}/profile`, updates);
+    return this.http.patch<User>(`${this.apiUrl}/me`, updates);
   }
 
   deleteProfile(): Observable<void> {

@@ -1,5 +1,6 @@
 package com.shybaiev.expense_tracker_backend.service;
 
+import com.shybaiev.expense_tracker_backend.dto.UserCreateUpdateDto;
 import com.shybaiev.expense_tracker_backend.dto.UserRegisterDto;
 import com.shybaiev.expense_tracker_backend.entity.Role;
 import com.shybaiev.expense_tracker_backend.entity.User;
@@ -107,5 +108,15 @@ public class UserService {
     public Optional<User> getUserByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+    public User updateUserForUser(String email, UserCreateUpdateDto dto) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (dto.getUsername() != null) user.setUsername(dto.getUsername());
+
+        return userRepository.save(user);
+    }
+
 
 }

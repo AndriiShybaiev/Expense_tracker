@@ -86,8 +86,7 @@ public class UserController {
 
 
     @PatchMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or #id == principal.getId()"
-    )
+    @PreAuthorize("hasRole('ADMIN') or #id == principal.getId()")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id,
                                               @RequestBody UserCreateUpdateDto userCreateUpdateDto,
                                               @AuthenticationPrincipal UserDetails userDetails) {
@@ -154,11 +153,20 @@ public class UserController {
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
-        Optional<User> maybeUser = userService.getUserByEmail(userDetails.getUsername());
-        if (maybeUser.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(userMapper.toDto(maybeUser.get()));
+        User user = userService.getUserByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        return ResponseEntity.ok(userMapper.toDto(user));
     }
+
+    @PatchMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> updateCurrentUser(
+            @RequestBody UserCreateUpdateDto userCreateUpdateDto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User updatedUser = userService.updateUserForUser(userDetails.getUsername(), userCreateUpdateDto);
+        return ResponseEntity.ok(userMapper.toDto(updatedUser));
+    }
+
 
 }
